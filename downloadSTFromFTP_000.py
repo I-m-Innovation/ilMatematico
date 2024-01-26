@@ -58,6 +58,11 @@ def ScaricaDatiST():
     gFile = open("201832_SanTeodoro.csv", "wb")
     ftp.retrbinary('RETR 201832_SanTeodoro.csv', gFile.write)
     gFile.close()
+
+    gFile = open("DBST.csv", "wb")
+    ftp.retrbinary('RETR DBST.csv', gFile.write)
+    gFile.close()
+
     ftp.close()
 
     df = pd.read_csv("201832_SanTeodoro.csv", on_bad_lines='skip', header='infer', delimiter=';')
@@ -90,5 +95,19 @@ def ScaricaDatiST():
     ValQ = ValQ[1:]
 
     data = {"Time": np.array(TimeQ), "Charge": np.array(ValQ), "Power": np.array(ValP), "Jump": np.array(ValH)}
+
+    # aggiungo i nuovi dati al database
+    # dfOld = pd.read_csv("DBST.csv", on_bad_lines='skip', header='infer', delimiter=';')
+    #
+    # TempiOld = dfOld['TimeString']
+    # TempiOld = pd.to_datetime(TempiOld, format='%d/%m/%Y %H:%M:%S')
+    # last_tOld = TempiOld.iloc[-1]
+    #
+    # last_New = TimeQ.iloc[-1]
+    #
+    # NewIndexes = pd.DatetimeIndex(TimeQ)
+    # OldIndexes = pd.DatetimeIndex(TempiOld)
+    # toAdd = TimeQ[last_New > last_tOld]
+    # C = 5
 
     return data

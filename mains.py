@@ -139,6 +139,13 @@ def mainPartitore(PlantData, TGMode):
     return PlantData
 
 
+def calcolaAggregati(data, PlantName):
+
+    Aggregati = []
+
+    return Aggregati
+
+
 def checkSTProduction(PlantData):
 
     DB = PlantData["DB"]
@@ -165,6 +172,10 @@ def mainST(PlantData, TGMode):
     sendTelegram(PlantData["Plant state"], NewState, TGMode, "San Teodoro")
     PlantData["Plant state"] = NewState
     displayState(NewState)
+
+    Aggregati = calcolaAggregati(data, "ST")
+
+
 
     return PlantData
 
@@ -285,7 +296,7 @@ def mainSA3(PlantData, TGMode):
 
     NewState = checkSA3Production(PlantData)
 
-    sendTelegram(PlantData["Plant state"], NewState, TGMode, "San Teodoro")
+    sendTelegram(PlantData["Plant state"], NewState, TGMode, "SA3")
     PlantData["Plant state"] = NewState
     displayState(NewState)
 

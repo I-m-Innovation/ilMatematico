@@ -49,15 +49,15 @@ def sistemaCartellaFTP_TF(Plant):
                                           central.minute, central.second)
                     newTimeLoc = datetime.strftime(newTimeLoc, format="%d/%m/%Y %H:%M:%S")
 
-                    newPT_Linea = float(DataNewLine[1].replace(",", "."))
-                    newPT_Turbina = float(DataNewLine[2].replace(",", "."))
-                    newPotAtt = float(DataNewLine[3].replace(",", "."))
-                    newPort = float(DataNewLine[4].replace(",", "."))
-                    newCosPhi = float(DataNewLine[5].replace(",", "."))
-                    newLevStram = float(DataNewLine[6].replace(",", "."))
-                    newPortata1600 = float(DataNewLine[7].replace(",", "."))
-                    newPressioneUscita = float(DataNewLine[8].replace(",", "."))
-                    newLevScarico = float(DataNewLine[9].replace(",", "."))
+                    newPT_Linea = float(DataNewLine.iloc[1].replace(",", "."))
+                    newPT_Turbina = float(DataNewLine.iloc[2].replace(",", "."))
+                    newPotAtt = float(DataNewLine.iloc[3].replace(",", "."))
+                    newPort = float(DataNewLine.iloc[4].replace(",", "."))
+                    newCosPhi = float(DataNewLine.iloc[5].replace(",", "."))
+                    newLevStram = float(DataNewLine.iloc[6].replace(",", "."))
+                    newPortata1600 = float(DataNewLine.iloc[7].replace(",", "."))
+                    newPressioneUscita = float(DataNewLine.iloc[8].replace(",", "."))
+                    newLevScarico = float(DataNewLine.iloc[9].replace(",", "."))
 
                     NewLine = pd.DataFrame({'x__TimeStamp': [newTime], 'Local': [newTimeLoc],
                                             'PLC1_AI_PT_LINEA': [newPT_Linea],

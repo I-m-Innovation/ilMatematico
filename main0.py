@@ -6,6 +6,7 @@ from mains import mainSCN, mainTF, mainST, mainPG, mainPartitore, mainRUB, mainS
 import os
 import psutil
 import pandas as pd
+import csv
 
 p = psutil.Process(os.getpid())
 
@@ -157,6 +158,17 @@ def main(mode, MainData):
     # -----------------------------------------------------------------------------------------------------
 
 
+def writeLastCycle():
+    Now = datetime.now()
+    ultimoCiclo = {"t": Now}
+
+    with open("lastRun.csv", 'w') as csvfile:
+
+        writer = csv.DictWriter(csvfile, ultimoCiclo.keys())
+        writer.writeheader()
+        writer.writerow(ultimoCiclo)
+
+
 TGmode = "TEST"
 # mode = "RUN"
 
@@ -195,7 +207,7 @@ Data = {"SCN": SCNData, "TF": TFData, "ST": STData, "PG": PGData, "PAR": PARData
 
 if TGmode == "TEST":
     print(f'{Fore.YELLOW}Warning: ilMatematico sta lavorando in modalità TEST{Style.RESET_ALL}')
-    dt = 0.5  # minutes
+    dt = 5  # minutes
 
 else:
     print(f'{Fore.GREEN}Warning: ilMatematico sta lavorando in modalità RUN{Style.RESET_ALL}')
@@ -207,6 +219,7 @@ while True:
     print("CICLO DI CALCOLO NUMERO  "+str(cycleN)+":")
     print("CPU:" + str(p.cpu_percent()) + " %")
     Data = main(TGmode, Data)
+    writeLastCycle()
     print("CICLO DI CALCOLO NUMERO "+str(cycleN)+" TERMINATO.")
     print("========================================================================")
 

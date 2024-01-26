@@ -35,7 +35,7 @@ def sistemaCartellaFTPPG(Plant):
                 newLine = pd.read_csv(currFile, on_bad_lines='skip', header='infer', delimiter=';')
                 DataNewLine = newLine.iloc[1, :]
 
-                newTime = DataNewLine[0]
+                newTime = DataNewLine.iloc[0]
                 test = datetime.strptime(newTime, '%d/%m/%Y %H:%M:%S')
                 test2 = datetime(test.year, test.month, test.day, test.hour, test.minute, test.second,
                                  tzinfo=pytz.utc)
@@ -46,12 +46,12 @@ def sistemaCartellaFTPPG(Plant):
                                       central.minute, central.second)
                 newTimeLoc = datetime.strftime(newTimeLoc, format="%d/%m/%Y %H:%M:%S")
 
-                newPT_Linea = float(DataNewLine[1].replace(",", "."))
-                newPT_Turbina = float(DataNewLine[2].replace(",", "."))
-                newPotAtt = float(DataNewLine[3].replace(",", "."))
-                newPort = float(DataNewLine[4].replace(",", "."))
-                newCosPhi = float(DataNewLine[5].replace(",", "."))
-                newLevStram = float(DataNewLine[6].replace(",", "."))
+                newPT_Linea = float(DataNewLine.iloc[1].replace(",", "."))
+                newPT_Turbina = float(DataNewLine.iloc[2].replace(",", "."))
+                newPotAtt = float(DataNewLine.iloc[3].replace(",", "."))
+                newPort = float(DataNewLine.iloc[4].replace(",", "."))
+                newCosPhi = float(DataNewLine.iloc[5].replace(",", "."))
+                newLevStram = float(DataNewLine.iloc[6].replace(",", "."))
 
                 NewLine = pd.DataFrame({'x__TimeStamp': [newTime], 'Local': [newTimeLoc],
                                         'PLC1_AI_PT_LINEA': [newPT_Linea], 'PLC1_AI_PT_TURBINA': [newPT_Turbina],
