@@ -1,3 +1,5 @@
+import numpy as np
+import pandas as pd
 from alertSystem import controllaFotovoltaico, controllaCentraleTG, sendTelegram
 from colorama import Fore, Style
 from quest2HigecoDefs import call2lastValue, authenticateHigeco
@@ -5,8 +7,9 @@ from downloadSTFromFTP_000 import ScaricaDatiST, ScaricaDatiPartitore
 from downloadSA3FromFTP_000 import ScaricaDatiSA3
 from downloadPGFromFTP_000 import ScaricaDatiPG, sistemaCartellaFTPPG
 from downloadTFFromFTP import ScaricaDatiTF, sistemaCartellaFTP_TF
-from datetime import datetime
+from datetime import datetime, timedelta
 import telebot
+from ftplib import FTP
 
 
 def displayState(State):
@@ -136,21 +139,145 @@ def mainPartitore(PlantData, TGMode):
     PlantData["Plant state"] = NewState
     displayState(NewState)
 
+    calcolaAggregatiHydro(data, "PAR")
+
     return PlantData
 
 
-def calcolaAggregati(data, PlantName):
+def calcolaPeriodi(data, Period):
 
-    Aggregati = []
+    Now = datetime.now()
 
-    return Aggregati
+    t = data["t"]
+    Q = data["Q"]
+    P = data["P"]
+    Bar = data["Bar"]
+    eta = data["eta"]
+    Q4Eta = data["Q4Eta"]
+
+    if Period == "Annuale":
+        tStart = datetime(Now.year, 1, 1, 0, 0, 0)
+    elif Period == "Mensile":
+        tStart = datetime(Now.year, Now.month, 1, 0, 0, 0)
+    else:
+        dt = timedelta(hours=24)
+        tStart = Now - dt
+
+    QSel = Q[t >= tStart]
+    PSel = P[t >= tStart]
+    BarSel = Bar[t >= tStart]
+    tSel = t[t >= tStart]
+    etaSel = eta[t >= tStart]
+
+    QMean = np.mean(QSel)
+    QDev = np.std(QSel)
+
+    PMean = np.mean(PSel)
+    PDev = np.std(PSel)
+
+    BarMean = np.mean(BarSel)
+    BarDev = np.std(BarSel)
+
+    etaMean = np.mean(etaSel[QSel >= Q4Eta])
+    etaDev = np.std(etaSel[QSel >= Q4Eta])
+
+    TLDict = {"t": tSel, "Q": QSel, "P": PSel, "Bar": BarSel, "Eta": etaSel}
+    TLdf = pd.DataFrame.from_dict(TLDict)
+
+    StatDict = {"QMean": [QMean], "QDev": [QDev], "PMean": [PMean], "PDev": [PDev], "BarMean": [BarMean],
+                "BarDev": [BarDev], "etaMean": [etaMean], "etaDev": [etaDev]}
+    Statdf = pd.DataFrame.from_dict(StatDict)
+
+    return TLdf, Statdf
+
+
+def calcolaAggregatiHydro(data, PlantTag):
+
+    g = 9.81
+    rho = 1000
+
+    if PlantTag == "ST":
+
+        t = data["timestamp"]
+        t = pd.to_datetime(t)
+        Q = data["Portata [l/s]"] / 1000
+        P = data["Potenza [kW]"]
+        Bar = data["Pressione [bar]"]
+        Q4Eta = 10
+        Q4Eta = Q4Eta / 1000
+        FTPFolder = '/dati/San_Teodoro'
+
+    elif PlantTag == "PG":
+
+        t = data["Local"]
+        t = pd.to_datetime(t)
+        Q = data["PLC1_AI_FT_PORT_IST"] / 1000
+        P = data["PLC1_AI_POT_ATTIVA"]
+        Bar = data["PLC1_AI_PT_TURBINA"]
+        Q4Eta = 10
+        Q4Eta = Q4Eta / 1000
+        FTPFolder = '/dati/ponte_giurino'
+
+    else:
+
+        t = []
+        Q = []
+        P = []
+        Bar = []
+        Q4Eta = []
+        FTPFolder = ''
+
+    eta = np.divide(1000*P, rho * g * np.multiply(Q, Bar) * 10.1974)
+    dataPeriodi = {"t": t, "Q": Q, "P": P, "Bar": Bar, "Q4Eta": Q4Eta, "eta": eta}
+
+    YearTL, YearStat = calcolaPeriodi(dataPeriodi, "Annuale")
+    YearTLFileName = PlantTag+"YearTL.csv"
+    YearStatFileName = PlantTag+"YearStat.csv"
+    YearTL.to_csv(YearTLFileName, index=False)
+    YearStat.to_csv(YearStatFileName, index=False)
+
+    # calcolo i dati mensili
+    MonthTL, MonthStat = calcolaPeriodi(dataPeriodi, "Mensile")
+    MonthTLFileName = PlantTag+"YearTL.csv"
+    MonthStatFileName = PlantTag+"YearStat.csv"
+    MonthTL.to_csv(MonthTLFileName, index=False)
+    MonthStat.to_csv(MonthStatFileName, index=False)
+
+    # calcolo i dati giornalieri
+    last24TL, last24Stat = calcolaPeriodi(dataPeriodi, "24h")
+    last24TLFileName = PlantTag+"YearTL.csv"
+    last24StatFileName = PlantTag+"YearStat.csv"
+    last24TL.to_csv(last24TLFileName, index=False)
+    last24Stat.to_csv(last24StatFileName, index=False)
+
+    ftp = FTP("192.168.10.211", timeout=120)
+    ftp.login('ftpdaticentzilio', 'Sd2PqAS.We8zBK')
+    ftp.cwd(FTPFolder)
+
+    File = open(YearTLFileName, "rb")
+    ftp.storbinary(f"STOR "+YearTLFileName, File)
+    File = open(YearStatFileName, "rb")
+    ftp.storbinary(f"STOR "+YearStatFileName, File)
+
+    File = open(MonthTLFileName, "rb")
+    ftp.storbinary(f"STOR "+MonthTLFileName, File)
+    File = open(MonthStatFileName, "rb")
+    ftp.storbinary(f"STOR "+MonthStatFileName, File)
+
+    File = open(last24TLFileName, "rb")
+    ftp.storbinary(f"STOR "+last24TLFileName, File)
+    File = open(last24StatFileName, "rb")
+    ftp.storbinary(f"STOR "+last24StatFileName, File)
+
+    ftp.close()
 
 
 def checkSTProduction(PlantData):
 
     DB = PlantData["DB"]
-    N = len(DB["Time"])
-    DatiIst = {"t": DB["Time"][N-1], "Q": DB["Charge"][N-1], "P": DB["Power"][N-1], "Pressure": DB["Jump"][N-1]}
+    N = len(DB["timestamp"])
+    DatiIst = {"t": DB["timestamp"][N-1], "Q": DB["Portata [l/s]"][N-1], "P": DB["Potenza [kW]"][N-1],
+               "Pressure": DB["Pressione [bar]"][N-1]}
 
     try:
         STNewState = controllaCentraleTG(DatiIst, "ST", PlantData["Plant state"])
@@ -173,9 +300,7 @@ def mainST(PlantData, TGMode):
     PlantData["Plant state"] = NewState
     displayState(NewState)
 
-    Aggregati = calcolaAggregati(data, "ST")
-
-
+    calcolaAggregatiHydro(data, "ST")
 
     return PlantData
 
@@ -183,8 +308,13 @@ def mainST(PlantData, TGMode):
 def checkPGProduction(PlantData):
 
     DB = PlantData["DB"]
-    N = len(DB["Time"])
-    DatiIst = {"t": DB["Time"][N-1], "Q": DB["Charge"][N-1], "P": DB["Power"][N-1], "Pressure": DB["Jump"][N-1]}
+    N = len(DB["x__TimeStamp"])
+
+    t = DB["Local"][N-1]
+    t = datetime.strptime(t, "%d/%m/%Y %H:%M:%S")
+
+    DatiIst = {"t": t, "Q": DB["PLC1_AI_FT_PORT_IST"][N-1], "P": DB["PLC1_AI_POT_ATTIVA"][N-1],
+               "Pressure": DB["PLC1_AI_PT_TURBINA"][N-1]}
 
     try:
         NewState = controllaCentraleTG(DatiIst, "PG", PlantData["Plant state"])
@@ -199,16 +329,19 @@ def checkPGProduction(PlantData):
 def mainPG(PlantData, TGMode):
 
     print("- Aggiornamento del database...")
-    sistemaCartellaFTPPG("PG")
+    sistemaCartellaFTPPG()
     print("-- Database aggiornato!")
 
     print("- Download dei dati...")
     data = ScaricaDatiPG()
     PlantData["DB"] = data
 
+    print("- Controllo del funzionamento della centrale")
     NewState = checkPGProduction(PlantData)
     sendTelegram(PlantData["Plant state"], NewState, TGMode, "Ponte Giurino")
     displayState(NewState)
+
+    calcolaAggregatiHydro(data, "PG")
 
     return PlantData
 
