@@ -3,7 +3,7 @@ import pandas as pd
 from alertSystem import controllaFotovoltaico, controllaCentraleTG, sendTelegram
 from colorama import Fore, Style
 from quest2HigecoDefs import call2lastValue, authenticateHigeco
-from downloadSTFromFTP_000 import ScaricaDatiST, ScaricaDatiPartitore
+from downloadSTFromFTP_000 import ScaricaDatiST, ScaricaDatiPAR
 from downloadSA3FromFTP_000 import ScaricaDatiSA3
 from downloadPGFromFTP_000 import ScaricaDatiPG, sistemaCartellaFTPPG
 from downloadTFFromFTP import ScaricaDatiTF, sistemaCartellaFTP_TF
@@ -116,8 +116,8 @@ def mainTF(PlantData, TGMode):
 def checkPARProduction(PlantData):
 
     DB = PlantData["DB"]
-    N = len(DB["Time"])
-    DatiIst = {"t": DB["Time"][N-1], "Q": DB["Charge"][N-1], "P": DB["Power"][N-1], "Pressure": DB["Jump"][N-1]}
+    N = len(DB["tQ"])
+    DatiIst = {"t": DB["tQ"][N-1], "Q": DB["Q"][N-1], "P": DB["P"][N-1], "Pressure": DB["Bar"][N-1]}
 
     try:
         NewState = controllaCentraleTG(DatiIst, "PAR", PlantData["Plant state"])
@@ -132,7 +132,7 @@ def checkPARProduction(PlantData):
 def mainPartitore(PlantData, TGMode):
 
     print("- Download dei dati...")
-    data = ScaricaDatiPartitore()
+    data = ScaricaDatiPAR()
     PlantData["DB"] = data
     NewState = checkPARProduction(PlantData)
     sendTelegram(PlantData["Plant state"], NewState, TGMode, "Partitore")
@@ -147,6 +147,7 @@ def mainPartitore(PlantData, TGMode):
 def calcolaPeriodi(data, Period):
 
     Now = datetime.now()
+    Tariffa = 0.21
 
     t = data["t"]
     Q = data["Q"]
@@ -155,6 +156,7 @@ def calcolaPeriodi(data, Period):
     eta = data["eta"]
     Q4Eta = data["Q4Eta"]
 
+
     if Period == "Annuale":
         tStart = datetime(Now.year, 1, 1, 0, 0, 0)
     elif Period == "Mensile":
@@ -162,6 +164,8 @@ def calcolaPeriodi(data, Period):
     else:
         dt = timedelta(hours=24)
         tStart = Now - dt
+
+    dt = Now - tStart
 
     QSel = Q[t >= tStart]
     PSel = P[t >= tStart]
@@ -181,11 +185,19 @@ def calcolaPeriodi(data, Period):
     etaMean = np.mean(etaSel[QSel >= Q4Eta])
     etaDev = np.std(etaSel[QSel >= Q4Eta])
 
+    ESel = PMean * (dt.days * 24 + dt.seconds / 3600)
+    FERSel = ESel * Tariffa
+
+    NSamples = len(t)
+    NOn = len(P[P > 0])
+    Av = NOn / NSamples
+
     TLDict = {"t": tSel, "Q": QSel, "P": PSel, "Bar": BarSel, "Eta": etaSel}
     TLdf = pd.DataFrame.from_dict(TLDict)
 
     StatDict = {"QMean": [QMean], "QDev": [QDev], "PMean": [PMean], "PDev": [PDev], "BarMean": [BarMean],
-                "BarDev": [BarDev], "etaMean": [etaMean], "etaDev": [etaDev]}
+                "BarDev": [BarDev], "etaMean": [etaMean], "etaDev": [etaDev], "Energy": [ESel], "Resa": [FERSel], "Availability": [Av]}
+
     Statdf = pd.DataFrame.from_dict(StatDict)
 
     return TLdf, Statdf
@@ -220,11 +232,14 @@ def calcolaAggregatiHydro(data, PlantTag):
 
     else:
 
-        t = []
-        Q = []
-        P = []
-        Bar = []
-        Q4Eta = []
+        t = data["tQ"]
+        t = pd.to_datetime(t)
+        Q = data["Q"]
+        P = data["P"]
+        Bar = data["Bar"]
+        Q4Eta = 5
+        Q4Eta = Q4Eta / 1000
+
         FTPFolder = ''
 
     eta = np.divide(1000*P, rho * g * np.multiply(Q, Bar) * 10.1974)
@@ -238,15 +253,15 @@ def calcolaAggregatiHydro(data, PlantTag):
 
     # calcolo i dati mensili
     MonthTL, MonthStat = calcolaPeriodi(dataPeriodi, "Mensile")
-    MonthTLFileName = PlantTag+"YearTL.csv"
-    MonthStatFileName = PlantTag+"YearStat.csv"
+    MonthTLFileName = PlantTag+"MonthTL.csv"
+    MonthStatFileName = PlantTag+"MonthStat.csv"
     MonthTL.to_csv(MonthTLFileName, index=False)
     MonthStat.to_csv(MonthStatFileName, index=False)
 
     # calcolo i dati giornalieri
     last24TL, last24Stat = calcolaPeriodi(dataPeriodi, "24h")
-    last24TLFileName = PlantTag+"YearTL.csv"
-    last24StatFileName = PlantTag+"YearStat.csv"
+    last24TLFileName = PlantTag+"last24hTL.csv"
+    last24StatFileName = PlantTag+"last24hStat.csv"
     last24TL.to_csv(last24TLFileName, index=False)
     last24Stat.to_csv(last24StatFileName, index=False)
 
