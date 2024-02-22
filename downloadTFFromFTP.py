@@ -47,7 +47,7 @@ def sistemaCartellaFTP_TF(Plant):
                     central = test2.astimezone(to_zone)
                     newTimeLoc = datetime(central.year, central.month, central.day, central.hour,
                                           central.minute, central.second)
-                    newTimeLoc = datetime.strftime(newTimeLoc, format="%d/%m/%Y %H:%M:%S")
+                    newTimeLoc = datetime.strftime(newTimeLoc, format="%Y-%m-%d %H:%M:%S")
 
                     newPT_Linea = float(DataNewLine.iloc[1].replace(",", "."))
                     newPT_Turbina = float(DataNewLine.iloc[2].replace(",", "."))
@@ -67,6 +67,7 @@ def sistemaCartellaFTP_TF(Plant):
                                             'PLC1_AI_FT_PORT_COND': [newPortata1600],
                                             'PLC1_AI_PT_TURBINA_OUT': [newPressioneUscita],
                                             'PLC1_AI_LT_SCAR_C': [newLevScarico]})
+
                     newDB = pd.concat([DB, NewLine], ignore_index=True)
                     newDB.to_csv(DBileName, index=False)
 

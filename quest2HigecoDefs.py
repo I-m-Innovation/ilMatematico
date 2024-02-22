@@ -112,3 +112,96 @@ def authenticateHigeco(Plant):
     token = json.loads(responseApi.text)['token']
 
     return token
+
+
+def call2Higeco(Plant, DataType, UnixOnSet, token):
+
+    headers = {
+        "accept": "application/json",
+        "Authorization": str(token),
+        "Content-Type": "application/json"
+    }   # QUESTA LINEA VA CAMBIATA PER MASCHERARE LE CREDENZIALI
+
+    if Plant == "SCN":
+        PId = '1032'
+        DevId = '2589LJTGI818'
+        LogId = '1042242'
+
+        if DataType == "Irradiation":
+            VarId = '1042242009'
+
+        elif DataType == "Eirr":
+            VarId = '1042242003'
+
+        elif DataType == "PowerEMH":
+            LogId = '2003079'
+            VarId = '2003079081'
+
+        elif DataType == "Power":
+            VarId = '1042242001'
+
+        elif DataType == "PowerLandis":
+            LogId = '2003079'
+            VarId = '2003079081'
+
+        elif DataType == "Energy":
+            VarId = '1042242000'
+
+        elif DataType == "TMod":
+            VarId = '1042242134'
+
+        elif DataType == "EMH":
+            LogId = '2003079'
+            VarId = '2005861865'
+
+        elif DataType == "Landis":
+
+            LogId = '2005861'
+            VarId = '2003079083'
+
+        elif DataType == "Power1":
+
+            LogId = '2001442'
+            VarId = '2001442447'
+
+        elif DataType == "Power2":
+
+            LogId = '2002672'
+            VarId = '2002672677'
+
+    else:
+        PId = '992'
+        DevId = '3189OVTGIDEF'
+        LogId = '2001087'
+
+        if DataType == "Irradiation":
+            VarId = '1042331009'
+
+        elif DataType == "Energy":
+            VarId = '1042331000'
+
+        elif DataType == "Power":
+            VarId = '1042331001'
+
+        else:
+            VarId = '1042331008'
+
+    URL = "https://higeco-monitoraggio.it/api/v1/getLogData/" + PId + "/" + DevId + "/" + LogId + "/" + VarId +\
+          "?from=" + str(int(UnixOnSet))
+
+    resp = requests.get(URL, headers=headers)
+
+    Dict = resp.json()
+
+    df = pd.DataFrame.from_dict(Dict['data'])
+
+    if len(df) > 0:
+
+        t = pd.to_datetime(df[0], unit='s', utc=True).map(lambda x: x.tz_convert('Europe/Rome'))
+        Var = df[1]
+        data = {"t": t, "Val": Var}
+
+    else:
+        data = []
+
+    return data

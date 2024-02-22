@@ -1,63 +1,15 @@
 import numpy as np
 import pandas as pd
-from alertSystem import controllaFotovoltaico, controllaCentraleTG, sendTelegram
+from alertSystem import controllaFotovoltaico, controllaCentraleTG, sendTelegram, controllaCST
 from colorama import Fore, Style
-from quest2HigecoDefs import call2lastValue, authenticateHigeco
-from downloadSTFromFTP_000 import ScaricaDatiST, ScaricaDatiPAR
-from downloadSA3FromFTP_000 import ScaricaDatiSA3
+from quest2HigecoDefs import call2lastValue, authenticateHigeco, call2Higeco
+from downloadSTFromFTP_000 import ScaricaDatiPAR
+from downloadSA3FromFTP_000 import ScaricaDatiSA3New
 from downloadPGFromFTP_000 import ScaricaDatiPG, sistemaCartellaFTPPG
 from downloadTFFromFTP import ScaricaDatiTF, sistemaCartellaFTP_TF
 from datetime import datetime, timedelta
 import telebot
 from ftplib import FTP
-
-
-def displayState(State):
-
-    if State == "O":
-        print(f'-- {Fore.GREEN}In produzione!{Style.RESET_ALL}')
-
-    elif State == "W":
-        print(f'-- {Fore.YELLOW}In no link!{Style.RESET_ALL}')
-
-    elif State == "U":
-        print(f'-- {Fore.YELLOW}Stato centrale non riconosciuto!{Style.RESET_ALL}')
-
-    else:
-        print(f'-- {Fore.RED}ANOMALIE CENTRALE RILEVATA!{Style.RESET_ALL}')
-
-
-def checkSCNProduction(token, PlantData):
-
-    # leggo gli ultimi dati da Higeco
-    Data1 = call2lastValue(token, "SCN1")
-    Data2 = call2lastValue(token, "SCN2")
-    lastI = Data2["lastI"]
-
-    TMY = PlantData["TMY"]
-
-    if lastI == "#E2":
-        tCfr = Data1['lastT']
-        tCfr = datetime(2020, tCfr.month, tCfr.day, tCfr.hour, tCfr.minute)
-        ICfr = TMY["Imean"]
-        lastI = ICfr[TMY["date"] == tCfr]
-        lastI = float(lastI)
-
-    try:
-        SCN1NewState = controllaFotovoltaico(Data1, "SCN1", PlantData["Plant state"]["SCN1"], lastI)
-    except Exception as err:
-        print(err)
-        SCN1NewState = "U"
-
-    try:
-        SCN2NewState = controllaFotovoltaico(Data2, "SCN1", PlantData["Plant state"]["SCN2"], lastI)
-    except Exception as err:
-        print(err)
-        SCN2NewState = "U"
-
-    NewState = {"SCN1": SCN1NewState, "SCN2": SCN2NewState}
-
-    return NewState
 
 
 def mainSCN(PlantData, TGMode):
@@ -76,6 +28,12 @@ def mainSCN(PlantData, TGMode):
 
     PlantData["Plant state"]["SCN2"] = NewState["SCN2"]
     displayState(NewState["SCN2"])
+
+    data = scaricaDatiSCN(token)
+    data["PN"] = 926.64
+    data["Tariffa"] = 0.225
+
+    calcolaAggregatiPV(data, "SCN")
 
     return PlantData
 
@@ -101,6 +59,7 @@ def mainTF(PlantData, TGMode):
     print("- Aggiornamento del database...")
     sistemaCartellaFTP_TF("TF")
     data = ScaricaDatiTF()
+    data = pd.DataFrame.from_dict(data)
     print("-- Database aggiornato!")
 
     PlantData["DB"] = data
@@ -109,6 +68,8 @@ def mainTF(PlantData, TGMode):
     sendTelegram(PlantData["Plant state"], NewState, TGMode, "Torrino Foresta")
     PlantData["Plant state"] = NewState
     displayState(NewState)
+
+    calcolaAggregatiHydro(data, "TF")
 
     return PlantData
 
@@ -144,18 +105,18 @@ def mainPartitore(PlantData, TGMode):
     return PlantData
 
 
-def calcolaPeriodi(data, Period):
+def calcolaPeriodiHydro(data, Period):
 
     Now = datetime.now()
     Tariffa = 0.21
 
     t = data["t"]
+    t = pd.to_datetime(t)
     Q = data["Q"]
     P = data["P"]
     Bar = data["Bar"]
     eta = data["eta"]
     Q4Eta = data["Q4Eta"]
-
 
     if Period == "Annuale":
         tStart = datetime(Now.year, 1, 1, 0, 0, 0)
@@ -188,15 +149,20 @@ def calcolaPeriodi(data, Period):
     ESel = PMean * (dt.days * 24 + dt.seconds / 3600)
     FERSel = ESel * Tariffa
 
-    NSamples = len(t)
-    NOn = len(P[P > 0])
-    Av = NOn / NSamples
+    NSamples = len(tSel)
+    NOn = len(PSel[PSel > 0])
+
+    if NSamples != 0:
+        Av = NOn / NSamples
+    else:
+        Av = 0
 
     TLDict = {"t": tSel, "Q": QSel, "P": PSel, "Bar": BarSel, "Eta": etaSel}
     TLdf = pd.DataFrame.from_dict(TLDict)
 
     StatDict = {"QMean": [QMean], "QDev": [QDev], "PMean": [PMean], "PDev": [PDev], "BarMean": [BarMean],
-                "BarDev": [BarDev], "etaMean": [etaMean], "etaDev": [etaDev], "Energy": [ESel], "Resa": [FERSel], "Availability": [Av]}
+                "BarDev": [BarDev], "etaMean": [etaMean], "etaDev": [etaDev], "Energy": [ESel], "Resa": [FERSel],
+                "Availability": [Av]}
 
     Statdf = pd.DataFrame.from_dict(StatDict)
 
@@ -230,36 +196,84 @@ def calcolaAggregatiHydro(data, PlantTag):
         Q4Eta = Q4Eta / 1000
         FTPFolder = '/dati/ponte_giurino'
 
-    else:
+    elif PlantTag == "PAR":
 
         t = data["tQ"]
         t = pd.to_datetime(t)
-        Q = data["Q"]
+        Q = data["Q"] / 1000
         P = data["P"]
         Bar = data["Bar"]
         Q4Eta = 5
         Q4Eta = Q4Eta / 1000
 
-        FTPFolder = ''
+        FTPFolder = '/dati/San_Teodoro'
 
-    eta = np.divide(1000*P, rho * g * np.multiply(Q, Bar) * 10.1974)
-    dataPeriodi = {"t": t, "Q": Q, "P": P, "Bar": Bar, "Q4Eta": Q4Eta, "eta": eta}
+    elif PlantTag == "TF":
 
-    YearTL, YearStat = calcolaPeriodi(dataPeriodi, "Annuale")
+        t = data["Time"]
+        t = pd.to_datetime(t)
+        Q = data["Charge"]
+        P = data["Power"]
+        Bar = data["Jump"] / 10.1974
+        Q4Eta = 0.6
+        Q4Eta = Q4Eta
+        FTPFolder = '/dati/Torrino_Foresta'
+
+    elif PlantTag == "SA3":
+
+        t = data["Time"]
+        t = pd.to_datetime(t)
+        Q = data["Charge"]
+        P = data["Power"]
+        Bar = data["Jump"] / 10.1974
+        Q4Eta = 0.6
+        Q4Eta = Q4Eta
+        FTPFolder = '/dati/SA3'
+
+    elif PlantTag == "CST":
+
+        t = data["DB"]["t"]
+        Q = data["DB"]["Q"]
+        PPAR = data["DB"]["PPAR"]
+        PST = data["DB"]["PST"]
+        P = data["DB"]["P"]
+        Bar = data["DB"]["Bar"]
+        eta = data["DB"]["eta"]
+        Q4Eta = 0
+        FTPFolder = '/dati/San_Teodoro'
+
+    else:
+        Q4Eta = 0
+        t = data["DB"]["t"]
+        Q = data["DB"]["Q"]
+        P = data["DB"]["P"]
+        Bar = data["DB"]["Bar"]
+
+        eta = data["DB"]["eta"]
+
+        FTPFolder = '/dati/San_Teodoro'
+
+    if PlantTag != "CST":
+        eta = np.divide(1000*P, rho * g * np.multiply(Q, Bar) * 10.1974)
+        dataPeriodi = {"t": t, "Q": Q, "P": P, "Bar": Bar, "Q4Eta": Q4Eta, "eta": eta}
+    else:
+        dataPeriodi = {"t": t, "Q": Q, "PST": PST, "PPAR": PPAR, "P": P,"Bar": Bar, "Q4Eta": Q4Eta, "eta": eta}
+
+    YearTL, YearStat = calcolaPeriodiHydro(dataPeriodi, "Annuale")
     YearTLFileName = PlantTag+"YearTL.csv"
     YearStatFileName = PlantTag+"YearStat.csv"
     YearTL.to_csv(YearTLFileName, index=False)
     YearStat.to_csv(YearStatFileName, index=False)
 
     # calcolo i dati mensili
-    MonthTL, MonthStat = calcolaPeriodi(dataPeriodi, "Mensile")
+    MonthTL, MonthStat = calcolaPeriodiHydro(dataPeriodi, "Mensile")
     MonthTLFileName = PlantTag+"MonthTL.csv"
     MonthStatFileName = PlantTag+"MonthStat.csv"
     MonthTL.to_csv(MonthTLFileName, index=False)
     MonthStat.to_csv(MonthStatFileName, index=False)
 
     # calcolo i dati giornalieri
-    last24TL, last24Stat = calcolaPeriodi(dataPeriodi, "24h")
+    last24TL, last24Stat = calcolaPeriodiHydro(dataPeriodi, "24h")
     last24TLFileName = PlantTag+"last24hTL.csv"
     last24StatFileName = PlantTag+"last24hStat.csv"
     last24TL.to_csv(last24TLFileName, index=False)
@@ -291,6 +305,7 @@ def checkSTProduction(PlantData):
 
     DB = PlantData["DB"]
     N = len(DB["timestamp"])
+
     DatiIst = {"t": DB["timestamp"][N-1], "Q": DB["Portata [l/s]"][N-1], "P": DB["Potenza [kW]"][N-1],
                "Pressure": DB["Pressione [bar]"][N-1]}
 
@@ -316,6 +331,133 @@ def mainST(PlantData, TGMode):
     displayState(NewState)
 
     calcolaAggregatiHydro(data, "ST")
+
+    return PlantData
+
+
+def checkCSTCharge(PlantData):
+
+    Now = datetime.now()
+
+    t = PlantData["DB"]["t"]
+    t = pd.to_datetime(t)
+    Q = PlantData["DB"]["Q"]
+
+    tStart = Now - timedelta(hours=12)
+    lastQs = Q[t >= tStart]
+
+    lastQCST = np.mean(lastQs)
+
+    try:
+        CSTNewState = controllaCST(lastQCST)
+
+    except Exception as err:
+        print(err)
+        CSTNewState = "U"
+
+    return CSTNewState
+
+
+def ScaricaDatiCST(PlantData):
+
+    rho = 1000
+    g = 9.81
+    Now = datetime.now()
+
+    ftp = FTP("192.168.10.211", timeout=120)
+    ftp.login('ftpdaticentzilio', 'Sd2PqAS.We8zBK')
+    ftp.cwd('/dati/San_Teodoro')
+    gFile = open("DBCST.csv", "wb")
+    ftp.retrbinary('RETR DBCST.csv', gFile.write)
+    gFile.close()
+
+    DBCST = pd.read_csv("DBCST.csv")
+
+    t = DBCST["t"]
+    t = pd.to_datetime(t)
+    QPAR = DBCST["QPAR"]
+    QST = DBCST["QST"]
+    Q = DBCST["Q"]
+    PPAR = DBCST["PPAR"]
+    PST = DBCST["PST"]
+    P = DBCST["P"]
+    Bar = DBCST["Bar"]
+    etaPAR = DBCST["etaPAR"]
+    etaST = DBCST["etaST"]
+    eta = DBCST["eta"]
+
+    tPARNew = PlantData["PAR"]["DB"]["tQ"]
+    tPARNew = pd.to_datetime(tPARNew)
+    tSTNew = PlantData["ST"]["DB"]["timestamp"]
+    tSTNew = pd.to_datetime(tSTNew)
+    QPARNew = PlantData["PAR"]["DB"]["Q"]
+    QSTNew = PlantData["ST"]["DB"]["Portata [l/s]"]
+    PPARNew = PlantData["PAR"]["DB"]["P"]
+    PSTNew = PlantData["ST"]["DB"]["Potenza [kW]"]
+    BARPARNew = PlantData["PAR"]["DB"]["P"]
+    BARSTNew = PlantData["ST"]["DB"]["Potenza [kW]"]
+    etaPARNew = np.divide(1000 * PPARNew, rho * g * np.multiply(QPARNew, BARPARNew) * 10.1974)
+    etaSTNew = np.divide(1000 * PSTNew, rho * g * np.multiply(QSTNew, BARSTNew) * 10.1974)
+
+    tCurr = t.iloc[-1]
+
+    while tCurr <= Now-timedelta(hours=1):
+
+        t = pd.concat([t, pd.Series(tCurr + timedelta(minutes=30))], ignore_index=True, axis=0)
+
+        QMeanPAR = np.mean(QPARNew[(tPARNew >= tCurr) & (tPARNew < tCurr + timedelta(hours=1))])
+        QMeanST = np.mean(QSTNew[(tSTNew >= tCurr) & (tSTNew < tCurr + timedelta(hours=1))])
+        QPAR = pd.concat([QPAR, pd.Series(QMeanPAR)], ignore_index=True, axis=0)
+        QST = pd.concat([QST, pd.Series(QMeanST)], ignore_index=True, axis=0)
+        QS = QMeanPAR + QMeanST
+        Q = pd.concat([Q, pd.Series(QS)], ignore_index=True)
+
+        PMeanPAR = np.mean(PPARNew[(tPARNew >= tCurr) & (tPARNew < tCurr + timedelta(hours=1))])
+        PMeanST = np.mean(PSTNew[(tSTNew >= tCurr) & (tSTNew < tCurr + timedelta(hours=1))])
+        PPAR = pd.concat([PPAR, pd.Series(PMeanPAR)], ignore_index=True, axis=0)
+        PST = pd.concat([PST, pd.Series(PMeanST)], ignore_index=True, axis=0)
+        PS = PMeanPAR + PMeanST
+        P = pd.concat([P, pd.Series(PS)], ignore_index=True, axis=0)
+
+        BARMeanPAR = np.mean(BARPARNew[(tPARNew >= tCurr) & (tPARNew < tCurr + timedelta(hours=1))])
+        BARMeanST = np.mean(BARSTNew[(tSTNew >= tCurr) & (tSTNew < tCurr + timedelta(hours=1))])
+        BARS = np.mean([BARMeanPAR,BARMeanST])
+        Bar = pd.concat([Bar, pd.Series(BARS)], ignore_index=True, axis=0)
+
+        etaMeanPAR = np.mean(etaPARNew[(tPARNew >= tCurr) & (tPARNew < tCurr + timedelta(hours=1))])
+        etaMeanST = np.mean(etaSTNew[(tSTNew >= tCurr) & (tSTNew < tCurr + timedelta(hours=1))])
+        etaPAR = pd.concat([etaPAR, pd.Series(etaMeanPAR)], ignore_index=True, axis=0)
+        etaST = pd.concat([etaST, pd.Series(etaMeanST)], ignore_index=True, axis=0)
+        etaSTOld = etaST
+        etaS = (70 * etaMeanST + 25 * etaMeanST) / 95
+
+        eta = pd.concat([eta, pd.Series(etaS)], ignore_index=True, axis=0)
+        tCurr = tCurr + timedelta(hours=1)
+
+    NewDict = {"t": t, "QPAR": QPAR, "QST": QST, "Q": Q, "PPAR": PPAR, "PST": PST, "P": P,
+               "Bar": Bar, "etaPAR": etaPAR, "etaST": etaST, "eta": eta}
+
+    NewDB = pd.DataFrame.from_dict(NewDict)
+    NewDB.to_csv("DBCST.csv", index=False)
+
+    File = open("DBCST.csv", "rb")
+    ftp.storbinary(f"STOR " + "DBCST.csv", File)
+
+    ftp.close()
+
+    return DBCST
+
+
+def mainCST(PlantData, TGMode):
+
+    PlantData["DB"] = ScaricaDatiCST(PlantData)
+    NewState = checkCSTCharge(PlantData)
+    sendTelegram(PlantData["Plant state"], NewState, TGMode, "San Teodoro")
+    PlantData["Plant state"] = NewState
+
+    displayState(NewState)
+
+    calcolaAggregatiHydro(PlantData, "CST")
 
     return PlantData
 
@@ -361,33 +503,8 @@ def mainPG(PlantData, TGMode):
     return PlantData
 
 
-def checkRUBProduction(token, PlantData):
-    # leggo gli ultimi dati da Higeco
-    Data = call2lastValue(token, "RUB")
-    lastI = Data["lastI"]
 
-    TMY = PlantData["TMY"]
 
-    if lastI == "#E2":
-        tCfr = Data['lastT']
-        tCfr = datetime(2020, tCfr.month, tCfr.day, tCfr.hour, tCfr.minute)
-        ICfr = TMY["Imean"]
-        lastI = ICfr[TMY["date"] == tCfr]
-
-        if len(lastI) == 0:
-            lastI = "Not found"
-        else:
-            lastI = float(lastI)
-
-    print("- Controllo dello stato della centrale...")
-    try:
-        NewState = controllaFotovoltaico(Data, "RUB", PlantData["Plant state"], lastI)
-    except Exception as err:
-        print(err)
-        NewState = "U"
-
-    return NewState
-    # esco dalla funzione lo stato dell'impianto
 
 
 def mainRUB(PlantData, TGMode):
@@ -402,6 +519,13 @@ def mainRUB(PlantData, TGMode):
 
     PlantData["Plant state"] = NewState
     displayState(NewState)
+
+    data = scaricaDatiRUB(token)
+    data["PN"] = 997.44
+    data["Tariffa"] = 0.315
+
+    calcolaAggregatiPV(data, "RUB")
+
 
     return PlantData
 
@@ -429,11 +553,13 @@ def checkSA3Production(PlantData):
 def mainSA3(PlantData, TGMode):
 
     try:
-        data = ScaricaDatiSA3()
+        data = ScaricaDatiSA3New()
         PlantData["DB"] = data
         PlantData["Error"] = "None"
 
     except Exception as err:
+        print(err)
+        data = []
         PlantData["Error"] = "Empty file"
         if str(err) != "No columns to parse from file":
             token = "6007635672:AAF_kA2nV4mrscssVRHW0Fgzsx0DjeZQIHU"
@@ -447,5 +573,8 @@ def mainSA3(PlantData, TGMode):
     sendTelegram(PlantData["Plant state"], NewState, TGMode, "SA3")
     PlantData["Plant state"] = NewState
     displayState(NewState)
+
+    if data != []:
+        calcolaAggregatiHydro(data, "SA3")
 
     return PlantData

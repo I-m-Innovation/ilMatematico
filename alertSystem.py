@@ -138,23 +138,54 @@ def sendTelegram(Old, New, TGMode, PlantName):
     else:
         ID = RunId
 
-    if New == "O":
-        if Old != "O":
-            Text = "🟢 *" + PlantName + "*: IN PRODUZIONE!"
-            bot.send_message(ID, text=Text, parse_mode='Markdown')
+    if PlantName == "CST":
 
-    elif New == "W":
-        if Old != "W":
-            Text = "🟠 *" + PlantName + "*: FERMO o in NO LINK!"
-            bot.send_message(ID, text=Text, parse_mode='Markdown')
+        if New == "OK":
+            if Old != "OK":
+                Text = "💦 *CONDOTTA SAN TEODORO*: Portata rientrata a regime!"
+                bot.send_message(ID, text=Text, parse_mode='Markdown')
 
-    elif New == "A":
-        if Old != "A":
-            Text = "🔴 *" + PlantName + "*: FERMO o in NO LINK!"
-            bot.send_message(ID, text=Text, parse_mode='Markdown')
+            elif New == "A":
+                if Old != "A":
+                    Text = "🔴 *CONDOTTA SAN TEODORO*: Portata sotto soglia!"
+                    bot.send_message(ID, text=Text, parse_mode='Markdown')
 
-    elif New == "U":
+            elif New == "U":
 
-        if Old != "U":
-            Text = "❓ *" + PlantName + "*: Stato centrale non riconosciuto!"
-            bot.send_message(ID, text=Text, parse_mode='Markdown')
+                if Old != "U":
+                    Text = "❓ *CONDOTTA SAN TEODORO*: Stato condotta non riconosciuto!"
+                    bot.send_message(ID, text=Text, parse_mode='Markdown')
+
+    else:
+
+        if New == "O":
+            if Old != "O":
+                Text = "🟢 *" + PlantName + "*: IN PRODUZIONE!"
+                bot.send_message(ID, text=Text, parse_mode='Markdown')
+
+        elif New == "W":
+            if Old != "W":
+                Text = "🟠 *" + PlantName + "*: FERMO o in NO LINK!"
+                bot.send_message(ID, text=Text, parse_mode='Markdown')
+
+        elif New == "A":
+            if Old != "A":
+                Text = "🔴 *" + PlantName + "*: FERMO o in NO LINK!"
+                bot.send_message(ID, text=Text, parse_mode='Markdown')
+
+        elif New == "U":
+
+            if Old != "U":
+                Text = "❓ *" + PlantName + "*: Stato centrale non riconosciuto!"
+                bot.send_message(ID, text=Text, parse_mode='Markdown')
+
+
+def controllaCST(lastQCST):
+
+    if lastQCST < 91:
+        newState = "A"
+
+    else:
+        newState = "OK"
+
+    return newState
