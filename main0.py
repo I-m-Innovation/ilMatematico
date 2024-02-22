@@ -8,6 +8,9 @@ import csv
 from ftplib import FTP
 from scan import scan
 from colorama import Fore, Style
+from num2string_001 import convertNumber
+from alertSystem import sendResume
+import numpy as np
 
 p = psutil.Process(os.getpid())
 
@@ -127,13 +130,56 @@ Data = {"SCN": SCNData, "TF": TFData, "ST": STData, "PG": PGData, "PAR": PARData
 
 if TGmode == "TEST":
     print(f'{Fore.YELLOW}Warning: ilMatematico sta lavorando in modalità TEST{Style.RESET_ALL}')
-    dt = 5  # minutes
+    dt = 10  # minutes
 
 else:
     print(f'{Fore.GREEN}Warning: ilMatematico sta lavorando in modalità RUN{Style.RESET_ALL}')
     dt = 10  # minutes
 
 botData = {"bot": bot, "mode": TGmode}
+
+
+def sendLast24Resa(mode):
+
+    #---TF---#
+    FileName = "TFlast24hStat.csv"
+    df = pd.read_csv(FileName)
+    ETF, dummy = convertNumber(df["Energy"][0], "Energy", "HTML", "TF")
+
+    #---ST---#
+    FileName = "STlast24hStat.csv"
+    df = pd.read_csv(FileName)
+    EST, dummy = convertNumber(df["Energy"][0], "Energy", "HTML", "ST")
+
+    #---PAR---#
+    FileName = "PARlast24hStat.csv"
+    df = pd.read_csv(FileName)
+    EPAR, dummy = convertNumber(df["Energy"][0], "Energy", "HTML", "PAR")
+
+    #---PG---#
+    FileName = "PGlast24hStat.csv"
+    df = pd.read_csv(FileName)
+    EPG, dummy = convertNumber(df["Energy"][0], "Energy", "HTML", "PG")
+
+    #---SCN---#
+    FileName = "SCNlast24hStat.csv"
+    df = pd.read_csv(FileName)
+    ESCN, dummy = convertNumber(df["Energy"][0], "Energy", "HTML", "SCN")
+
+    #---RUB---#
+    FileName = "RUBlast24hStat.csv"
+    df = pd.read_csv(FileName)
+    if np.isnan(df["Energy"][0]):
+        ERUB = "?"
+    else:
+        ERUB, dummy = convertNumber(df["Energy"][0], "Energy", "HTML", "RUB")
+
+    text = ("*PRODUZIONE DELLE ULTIME 24 ORE:\nTorrino Foresta*: "+ETF+"\n*San Teodoro*: "+ EST+ "\n*Partitore*: "+ EPAR
+            +"\n*Ponte Giurino*; "+ EPG + "\n*SCN Pilota*: " + ESCN +"\n*Rubino*: " + ERUB)
+
+    sendResume(text, mode)
+
+isSent = 0
 
 while True:
     print("========================================================================")
@@ -142,6 +188,14 @@ while True:
     Data = main(Data, botData)
     writeLastCycle()
     salvaAllarmi(Data)
+    Now = datetime.now()
+
+    if Now.minute >= 10 and isSent == 0:
+        sendLast24Resa(botData["mode"])
+        isSent = 1
+    elif Now.hour < 21:
+        isSent = 0
+
     print("CICLO DI CALCOLO NUMERO "+str(cycleN)+" TERMINATO.")
     print("========================================================================")
 

@@ -3,6 +3,20 @@ import numpy as np
 import telebot
 
 
+def sendResume(text, TGMode):
+
+    token = "6007635672:AAF_kA2nV4mrscssVRHW0Fgzsx0DjeZQIHU"
+    bot = telebot.TeleBot(token)
+    RunId = "-821960472"
+    TestId = "-672088289"
+
+    if TGMode == "TEST":
+        ID = TestId
+    else:
+        ID = RunId
+    bot.send_message(ID, text=text, parse_mode='Markdown')
+
+
 def controllaCentraleTG(DatiIst, Plant, oldState):
 
     Now = np.datetime64(datetime.now(), 'm')

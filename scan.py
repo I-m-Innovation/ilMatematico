@@ -32,7 +32,8 @@ def main(Plant, Data, TGMode):
         Data["Plant state"]["SCN2"] = NewState["SCN2"]
         displayState(NewState["SCN2"])
     else:
-        sendTelegram(Data["Plant state"], NewState, TGMode, Plant)
+
+        sendTelegram(Data["Plant state"], NewState, TGMode, Data["PlantName"])
         Data["Plant state"] = NewState
         displayState(NewState)
 
@@ -61,6 +62,8 @@ def scan(Plant, Data, botData):
         PlantName = "SA3"
     else:
         PlantName = "IMPIANTO IGNOTO"
+
+    Data["PlantName"] = PlantName
 
     TestId = "-672088289"
     mode = botData["mode"]
