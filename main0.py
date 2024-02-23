@@ -130,7 +130,7 @@ Data = {"SCN": SCNData, "TF": TFData, "ST": STData, "PG": PGData, "PAR": PARData
 
 if TGmode == "TEST":
     print(f'{Fore.YELLOW}Warning: ilMatematico sta lavorando in modalità TEST{Style.RESET_ALL}')
-    dt = 10  # minutes
+    dt = 2  # minutes
 
 else:
     print(f'{Fore.GREEN}Warning: ilMatematico sta lavorando in modalità RUN{Style.RESET_ALL}')
@@ -190,10 +190,11 @@ while True:
     salvaAllarmi(Data)
     Now = datetime.now()
 
-    if Now.minute >= 10 and isSent == 0:
+    print("Report inviato: "+isSent)
+    if Now.minute >= 15 and isSent == 0:
         sendLast24Resa(botData["mode"])
         isSent = 1
-    elif Now.hour < 21:
+    elif Now.minute < 15:
         isSent = 0
 
     print("CICLO DI CALCOLO NUMERO "+str(cycleN)+" TERMINATO.")
