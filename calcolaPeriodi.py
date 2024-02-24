@@ -126,6 +126,7 @@ def calcolaPeriodiPV(data, Period, PlantTag):
     dt = Now - tStart
 
     ISel = I[t >= tStart]
+    TSel = TMod[t >= tStart]
 
     tSel = t[t >= tStart]
     etaSel = eta[t >= tStart]
@@ -149,10 +150,8 @@ def calcolaPeriodiPV(data, Period, PlantTag):
     PMean = np.mean(PSel)
     PDev = np.std(PSel)
 
-    TModSel = np.mean(TMod)
-
-    TModMean = np.mean(TModSel)
-    TModDev = np.std(TModSel)
+    TModMean = np.mean(TSel)
+    TModDev = np.std(TSel)
 
     ESel = PMean * (dt.days * 24 + dt.seconds / 3600)
 
@@ -166,27 +165,37 @@ def calcolaPeriodiPV(data, Period, PlantTag):
         eta1Mean = E1Sel / EISel / PN[0]
         eta2Mean = E2Sel / EISel / PN[0]
 
-        NSamples1 = len(t)
-        NOn1 = len(P1Sel[P1Sel > 0])
+        # NSamples1 = len(t)
+        NSunOn = len(ISel[ISel>=50])
+        NOn1 = len(P1Sel[(P1Sel > 0) & (ISel>=50)])
 
-        Av1 = NOn1 / NSamples1
+        if NSunOn >0:
 
-        NSamples2 = len(t)
-        NOn1 = len(P2Sel[P2Sel > 0])
-        Av2 = NOn1 / NSamples2
+            Av1 = NOn1 / NSunOn
+
+            NSamples2 = len(t)
+            NOn1 = len(P2Sel[(P2Sel > 0) & (ISel>=50)])
+            Av2 = NOn1 / NSunOn
+        else:
+            Av1 = float("nan")
+            Av2 = float("nan")
 
     else:
 
         NSamples = len(t)
-        NOn = len(PSel[PSel > 0])
-        Av = NOn / NSamples
+        NSunOn = len(ISel[ISel>=50])
+        NOn = len(PSel[(PSel > 0) & (ISel>=50)])
+        if NSunOn > 0:
+            Av = NOn / NSunOn
+        else:
+            Av = float("nan")
 
     etaMean = ESel / EISel / PN[0] * 1000
     etaDev = np.std(etaSel)
 
     FTVSel = ESel * Tariffa
 
-    TLDict = {"t": tSel, "I": ISel, "P": PSel, "TMod": TModSel, "Eta": etaSel}
+    TLDict = {"t": tSel, "I": ISel, "P": PSel, "TMod": TSel, "Eta": etaSel}
     TLdf = pd.DataFrame.from_dict(TLDict)
 
     if PlantTag == "SCN":
