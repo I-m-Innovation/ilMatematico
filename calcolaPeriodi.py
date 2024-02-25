@@ -64,8 +64,8 @@ def calcolaPeriodiHydro(Plant, data, Period):
     BarMean = np.mean(BarSel)
     BarDev = np.std(BarSel)
 
-    etaMean = np.mean(etaSel[(QSel >= Q4Eta) & (etaSel < 1)])
-    etaDev = np.std(etaSel[(QSel >= Q4Eta) & (etaSel < 1)])
+    etaMean = np.mean(etaSel[(QSel >= Q4Eta) & (etaSel < 1) & (np.isinf(etaSel)==0)])
+    etaDev = np.std(etaSel[(QSel >= Q4Eta) & (etaSel < 1) & (np.isinf(etaSel)==0)])
 
     ESel = PMean * (dt.days * 24 + dt.seconds / 3600)
     FERSel = ESel * Tariffa
