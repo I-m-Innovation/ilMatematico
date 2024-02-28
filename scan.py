@@ -31,8 +31,8 @@ def main(Plant, Data, TGMode):
         displayState(NewState["SCN1"])
         Data["Plant state"]["SCN2"] = NewState["SCN2"]
         displayState(NewState["SCN2"])
-    else:
 
+    else:
         sendTelegram(Data["Plant state"], NewState, TGMode, Data["PlantName"])
         Data["Plant state"] = NewState
         displayState(NewState)

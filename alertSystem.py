@@ -152,7 +152,7 @@ def sendTelegram(Old, New, TGMode, PlantName):
     else:
         ID = RunId
 
-    if PlantName == "CST":
+    if PlantName == "Condotta San Teodoro":
 
         if New == "OK":
             if Old != "OK":
@@ -169,6 +169,11 @@ def sendTelegram(Old, New, TGMode, PlantName):
                 if Old != "U":
                     Text = "❓ *CONDOTTA SAN TEODORO*: Stato condotta non riconosciuto!"
                     bot.send_message(ID, text=Text, parse_mode='Markdown')
+
+        elif New == "A":
+            if Old != "A":
+                Text = "🔴 *CONDOTTA SAN TEODORO*: Portata sotto soglia!"
+                bot.send_message(ID, text=Text, parse_mode='Markdown')
 
     else:
 

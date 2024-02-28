@@ -46,6 +46,15 @@ def writeLastCycle():
         writer = csv.DictWriter(csvfile, ultimoCiclo.keys())
         writer.writeheader()
         writer.writerow(ultimoCiclo)
+    ftp = FTP("192.168.10.211", timeout=120)
+    ftp.login('ftpdaticentzilio', 'Sd2PqAS.We8zBK')
+
+    ftp.cwd('/dati/Database_Produzione')
+
+    fileName = "lastRun.csv"
+    File = open(fileName, "rb")
+    ftp.storbinary(f"STOR " + fileName, File)
+    ftp.close()
 
 
 def salvaAllarmi(data):
