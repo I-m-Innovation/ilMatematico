@@ -21,6 +21,7 @@ def controllaCentraleTG(DatiIst, Plant, oldState):
 
     Now = np.datetime64(datetime.now(), 'm')
 
+    dtTest = 30
     if Plant == "SCN1":
         lastP = DatiIst["P1"]
         lastP = lastP[len(lastP) - 1]
@@ -61,9 +62,12 @@ def controllaCentraleTG(DatiIst, Plant, oldState):
             lastT = []
             lastP = []
 
+    if Plant == "TF":
+        dtTest = 40
+
     dt = Now - lastT
 
-    if dt > 30 or lastP == []:
+    if dt > dtTest or lastP == []:
 
         if oldState == "W":
             newState = "A"

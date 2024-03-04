@@ -188,6 +188,7 @@ def sendLast24Resa(mode):
 
     sendResume(text, mode)
 
+
 isSent = 0
 
 while True:
