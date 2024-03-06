@@ -78,8 +78,8 @@ def ScaricaDatiSA3():
         CosPhiToStore = CosPhiToStore.astype(float)
         CosPhiToStore.name = col[4]
 
-        tToStore = df["Durchfluss"]
-        tToStore = pd.to_datetime(tToStore, format='%d/%m/%Y %H:%M:%S')
+        tToStore = df["LocalCol"]
+        tToStore = pd.to_datetime(tToStore)
         tToStore.name = col[0]
 
         dfToConcat = pd.concat([tToStore.reset_index(drop=True), QToStore.reset_index(drop=True),
