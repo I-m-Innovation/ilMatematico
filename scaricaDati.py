@@ -60,19 +60,19 @@ def ScaricaDatiSA3():
         QToStore = QToStore.astype(float)
         QToStore.name = col[1]
 
-        BarToStore = df["Durchfluss"]
+        BarToStore = df["Druck Eingang"]
         BarToStore = pd.Series(BarToStore).str.replace(',', '.')
         BarToStore[BarToStore == "1.#QNAN"] = float("nan")
         BarToStore = BarToStore.astype(float)
         BarToStore.name = col[2]
 
-        PToStore = df["Durchfluss"]
+        PToStore = df["Leistung"]
         PToStore = pd.Series(PToStore).str.replace(',', '.')
         PToStore[PToStore == "1.#QNAN"] = float("nan")
         PToStore = PToStore.astype(float)
         PToStore.name = col[3]
 
-        CosPhiToStore = df["Durchfluss"]
+        CosPhiToStore = df["CosPhi"]
         CosPhiToStore = pd.Series(CosPhiToStore).str.replace(',', '.')
         CosPhiToStore[CosPhiToStore == "1.#QNAN"] = float("nan")
         CosPhiToStore = CosPhiToStore.astype(float)
@@ -590,9 +590,9 @@ def scaricaDatiRUB(token):
     # vado a scaricare i dati successivi al timestamp
     tOn = datetime.timestamp(lastTimeStamp)
     I = call2Higeco("RUB", "Irradiation", tOn, token)
-    TModData = call2Higeco("SCN", "TMod", tOn, token)
-    P1Data = call2Higeco("SCN", "Power1", tOn, token)
-    P2Data = call2Higeco("SCN", "Power2", tOn, token)
+    TModData = call2Higeco("RUB", "TMod", tOn, token)
+    P1Data = call2Higeco("RUB", "Power1", tOn, token)
+    P2Data = call2Higeco("RUB", "Power2", tOn, token)
 
     coeff = len(I) * len(TModData) * len(P1Data) * len(P2Data)
 
@@ -653,7 +653,7 @@ def scaricaDatiSCN(token):
     # prelevo l'informazione sull'ultimo timestamp
     lastTimeStamp = t.iloc[-1]
     if pd.isnull(lastTimeStamp):
-        lastTimeStamp = t.iloc[-2]
+        lastTimeStamp = t.iloc[-1]+timedelta(minutes=5)
 
     # vado a scaricare i dati successivi al timestamp
     tOn = datetime.timestamp(lastTimeStamp)
