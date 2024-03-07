@@ -17,6 +17,7 @@ p = psutil.Process(os.getpid())
 
 def main(MainData, bot_data):
 
+    SA3DataNew = scan("SA3", MainData["SA3"], bot_data)
     RUBDataNew = scan("RUB", MainData["RUB"], bot_data)
     SCNDataNew = scan("SCN", MainData["SCN"], bot_data)
     PARDataNew = scan("PAR", MainData["PAR"], bot_data)
@@ -25,7 +26,6 @@ def main(MainData, bot_data):
     PlantData["ST"] = STDataNew
     PlantData["PAR"] = PARDataNew
     CSTDataNew = scan("CST", PlantData, bot_data)
-    SA3DataNew = scan("SA3", MainData["SA3"], bot_data)
     TFDataNew = scan("TF", MainData["TF"], bot_data)
     PGDataNew = scan("PG", MainData["PG"], bot_data)
 

@@ -51,7 +51,7 @@ def calcolaAggregatiHydro(Plant, data):
     elif Plant == "SA3":
 
         t = data["t"]
-        t = pd.to_datetime(t)
+        t = pd.to_datetime(t, format='mixed')
         Q = data["Q"]
         P = data["P"]
         Bar = data["Bar"] / 10.1974

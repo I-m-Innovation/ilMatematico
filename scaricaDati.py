@@ -27,14 +27,14 @@ def ScaricaDatiSA3():
     dfDB = pd.read_csv("DBSA3.csv", on_bad_lines='skip', header='infer', delimiter=',')
     tDB = dfDB["t"]
 
-    tDB = pd.to_datetime(tDB)
+    tDB = pd.to_datetime(tDB, format='mixed')
     # dfDB["timestamp"] = tDB
     last_t_stored = tDB.iloc[-1]
 
     try:
         df = pd.read_csv("201905_SA3.csv", header='infer', delimiter=';', encoding='UTF-16')
         Tempi = df['LocalCol']
-        Tempi = pd.to_datetime(Tempi)
+        Tempi = pd.to_datetime(Tempi, format='mixed')
         lastFromPLC = Tempi.iloc[-1]
 
     except Exception as err:
@@ -79,7 +79,7 @@ def ScaricaDatiSA3():
         CosPhiToStore.name = col[4]
 
         tToStore = df["LocalCol"]
-        tToStore = pd.to_datetime(tToStore)
+        tToStore = pd.to_datetime(tToStore, format='mixed')
         tToStore.name = col[0]
 
         dfToConcat = pd.concat([tToStore.reset_index(drop=True), QToStore.reset_index(drop=True),
