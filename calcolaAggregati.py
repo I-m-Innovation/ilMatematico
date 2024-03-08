@@ -2,6 +2,162 @@ import pandas as pd
 import numpy as np
 from ftplib import FTP
 from calcolaPeriodi import calcolaPeriodiPV, calcolaPeriodiHydro
+import csv
+
+
+def ExpectedEta(lastVar2, Plant, lastVar3):
+
+    if Plant == "SA3":
+
+        FileName = "rendimentoReale" + Plant + ".csv"
+        CurvaRendimento = pd.read_csv(FileName)
+
+        QTeo = CurvaRendimento["QOut"]
+        if Plant != "TF" and Plant != "SA3":
+            QTeo = QTeo / 1000
+
+        etaTeo = CurvaRendimento["etaOut"]
+        etaDev = CurvaRendimento["devEta"]
+
+        # cerco i valori più vicini last Q
+
+        i = 0
+        while lastVar2 > QTeo.iloc[i]:
+            i = i + 1
+
+        if i != 0:
+            etaAspettato = (etaTeo[i - 1] + etaTeo[i]) / 2
+            devAspettato = 0.5 * np.sqrt(etaDev[i - 1] ** 22 + etaDev[i] ** 2)
+        else:
+            etaAspettato = (etaTeo[i] + etaTeo[i]) / 2
+            devAspettato = 0.5 * np.sqrt(etaDev[i] ** 2 + etaDev[i] ** 2)
+
+        etaMin = etaAspettato - devAspettato
+        etaMax = etaAspettato + devAspettato
+
+    else:
+
+        if Plant != "TF" and Plant != "SA3" and Plant != "SCN":
+            lastVar2 = lastVar2 * 1000
+
+        MeanFile = "MeanEta" + Plant + ".csv"
+        DevFile = "DevEta" + Plant + ".csv"
+
+        CurvaRendimento = pd.read_csv(MeanFile, header=None)
+        devRendimento = pd.read_csv(DevFile, header=None)
+
+        AsseVar2 = CurvaRendimento.iloc[0, 1:]
+        AsseVar3 = CurvaRendimento.iloc[1:, 0]
+
+        # cerco i valori più vicini last Q
+
+        i = 0
+        Var2Test = AsseVar2.iloc[i]
+        # print(len(AsseVar2))
+
+        while lastVar2 > Var2Test and i < len(AsseVar2) - 1:
+            # print(str(i))
+            i = i + 1
+            Var2Test = AsseVar2.iloc[i]
+
+        j = 0
+        Var3Test = AsseVar3.iloc[j]
+
+        if np.isnan(lastVar3):
+            lastVar3 = 0
+        FinalJ = 1
+        while lastVar3 > Var3Test and j < len(AsseVar3):
+            j = j + 1
+            if j >= len(AsseVar3):
+                FinalJ = j - 1
+                Var3Test = AsseVar3.iloc[FinalJ]
+
+            else:
+                FinalJ = j
+                Var3Test = AsseVar3.iloc[FinalJ]
+
+        etaAspettato = CurvaRendimento.iloc[FinalJ, i]
+        if np.isnan(etaAspettato):
+            etaAspettato = np.mean([CurvaRendimento.iloc[FinalJ - 1, i], CurvaRendimento.iloc[FinalJ + 1, i],
+                                    CurvaRendimento.iloc[FinalJ, i - 1], CurvaRendimento.iloc[FinalJ, i + 1]])
+
+        devAspettato = devRendimento.iloc[FinalJ, i]
+
+        etaMin = etaAspettato - devAspettato
+        etaMax = etaAspettato + devAspettato
+
+    return etaAspettato, etaMin, etaMax
+
+
+def salvaUltimoTimeStamp(Data, Plant, DatiImpianti):
+
+    last_t = Data["t"].iloc[-1]
+    lastP = Data["P"].iloc[-1]
+    lastVar2 = Data["Q"].iloc[-1]
+    lastVar3 = Data["Bar"].iloc[-1]
+
+    rho = 1000
+    g = 9.81
+    lastEta = lastP / (rho * g *lastVar2 * lastVar3 )
+
+    if Plant == "SA3":
+        etaExpected, etaMinExpected, etaMaxExpected = 0, 0, 0
+        etaDev = etaExpected - etaMinExpected
+
+    elif Plant == "CST":
+        etaAspettatoST, etaMinusST, etaPlusST = ExpectedEta(Data["QST"].iloc[-1], "ST", lastVar3)
+        etaAspettatoPAR, etaMinusPAR, etaPlusPAR = ExpectedEta(Data["QPAR"].iloc[-1], "PAR", lastVar3)
+        etaExpected = (70*etaAspettatoST + 25*etaAspettatoPAR)/95
+        devEtaST = etaAspettatoST - etaMinusST
+        devEtaPAR = etaAspettatoPAR - etaMinusPAR
+        etaDev = np.sqrt((70*devEtaST)**2 + (25*devEtaPAR)**2)/95
+        etaMinExpected = etaExpected - etaDev
+        etaMaxExpected = etaExpected + etaDev
+
+    else:
+        etaExpected, etaMinExpected, etaMaxExpected = ExpectedEta(lastVar2, Plant, lastVar3)
+        etaDev = etaExpected - etaMinExpected
+
+    PMinus = etaMinExpected * rho * g * lastVar2 * lastVar3 * 10.1974 / 1000
+    PPlus = etaMaxExpected * rho * g * lastVar2 * lastVar3 * 10.1974 / 1000
+
+    DatiImpianto = DatiImpianti[DatiImpianti["Tag"] == Plant]
+    DatiImpianto = DatiImpianto.reset_index()
+
+    PN = DatiImpianto["potenza_installata_kWp"]
+    Var2Max = DatiImpianto["Var2_max"][0]
+    Var2Media = DatiImpianto["Var2_media"][0]
+    Var2Dev = DatiImpianto["Var2_dev"][0]
+
+    Var3Max = DatiImpianto["Var3_max"][0]
+    Var3Media = DatiImpianto["Var2_media"][0]
+    Var3Dev = DatiImpianto["Var2_dev"][0]
+
+    DatiGauge = {
+        "Power": {"last_value": lastP, "MaxScala": PN, "inf": PMinus, "sup": PPlus},
+         "Var2": {"last_value": lastVar2, "MaxScala": Var2Max, "Media": Var2Media, "Dev": Var2Dev},
+         "Var3": {"last_value": lastVar3, "MaxScala": Var3Max, "Media": Var3Media, "Dev": Var3Dev},
+         "Eta": {"last_value": lastEta, "MaxScala": 100, "Media": etaExpected, "Dev": etaDev}
+    }
+
+    lastTSFileName = "dati gauge.csv"
+
+    with open(lastTSFileName, 'w') as csvfile:
+
+        writer = csv.DictWriter(csvfile, DatiGauge.keys())
+        writer.writeheader()
+        writer.writerow(DatiGauge)
+
+    ftp = FTP("192.168.10.211", timeout=120)
+    ftp.login('ftpdaticentzilio', 'Sd2PqAS.We8zBK')
+
+    ftp.cwd('/dati/'+DatiImpianto["folder"][0])
+
+    fileName = "dati gauge.csv"
+    File = open(fileName, "rb")
+    ftp.storbinary(f"STOR " + fileName, File)
+    ftp.close()
+
 
 
 def calcolaAggregatiHydro(Plant, data):
@@ -63,6 +219,8 @@ def calcolaAggregatiHydro(Plant, data):
 
         t = data["t"]
         Q = data["Q"] / 1000
+        QPAR = data["QPAR"]
+        QST = data["QST"]
         PPAR = data["PPAR"]
         PST = data["PST"]
         P = data["P"]
@@ -86,7 +244,7 @@ def calcolaAggregatiHydro(Plant, data):
         eta = np.divide(1000*P, rho * g * np.multiply(Q, Bar) * 10.1974)
         dataPeriodi = {"t": t, "Q": Q, "P": P, "Bar": Bar, "Q4Eta": Q4Eta, "eta": eta}
     else:
-        dataPeriodi = {"t": t, "Q": Q, "PST": PST, "PPAR": PPAR, "P": P, "Bar": Bar, "Q4Eta": Q4Eta, "eta": eta}
+        dataPeriodi = {"t": t, "QST": QST, "QPAR": QPAR, "Q": Q, "PST": PST, "PPAR": PPAR, "P": P, "Bar": Bar, "Q4Eta": Q4Eta, "eta": eta}
 
     YearTL, YearStat = calcolaPeriodiHydro(Plant, dataPeriodi, "Annuale")
     YearTLFileName = Plant+"YearTL.csv"
@@ -127,7 +285,19 @@ def calcolaAggregatiHydro(Plant, data):
     File = open(last24StatFileName, "rb")
     ftp.storbinary(f"STOR "+last24StatFileName, File)
 
-    ftp.close()
+    ftp = FTP("192.168.10.211", timeout=120)
+    ftp.login('ftpdaticentzilio', 'Sd2PqAS.We8zBK')
+
+    ftp.cwd('/dati/Database_Produzione')
+
+    gFile = open("lista_impianti.xlsx", "wb")
+    ftp.retrbinary('RETR lista_impianti.xlsx', gFile.write)
+    gFile.close()
+
+    DatiImpianti = pd.read_excel("lista_impianti.xlsx")
+
+    salvaUltimoTimeStamp(dataPeriodi, Plant, DatiImpianti)
+
 
 
 def calcolaAggregatiPV(Plant, data):
@@ -187,6 +357,22 @@ def calcolaAggregatiPV(Plant, data):
 
     ftp = FTP("192.168.10.211", timeout=120)
     ftp.login('ftpdaticentzilio', 'Sd2PqAS.We8zBK')
+
+    ftp.cwd('/dati/Database_Produzione')
+
+    gFile = open("lista_impianti.xlsx", "wb")
+    ftp.retrbinary('RETR lista_impianti.xlsx', gFile.write)
+    gFile.close()
+
+    DatiImpianti = pd.read_excel("lista_impianti.xlsx")
+
+    # calcolo i dati istantanei
+    lastTS = salvaUltimoTimeStamp(dataPeriodi, Plant, DatiImpianti)
+    lastTSFileName = Plant + "lastTimeStamp.csv"
+    lastTS.to_csv(lastTSFileName, index=False)
+
+    ftp = FTP("192.168.10.211", timeout=120)
+    ftp.login('ftpdaticentzilio', 'Sd2PqAS.We8zBK')
     ftp.cwd(FTPFolder)
 
     File = open(YearTLFileName, "rb")
@@ -203,6 +389,9 @@ def calcolaAggregatiPV(Plant, data):
     ftp.storbinary(f"STOR " + last24TLFileName, File)
     File = open(last24StatFileName, "rb")
     ftp.storbinary(f"STOR " + last24StatFileName, File)
+
+    File = open(lastTSFileName, "rb")
+    ftp.storbinary(f"STOR " + lastTSFileName, File)
 
     ftp.close()
 

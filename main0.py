@@ -17,9 +17,9 @@ p = psutil.Process(os.getpid())
 
 def main(MainData, bot_data):
 
-    SCNDataNew = scan("SCN", MainData["SCN"], bot_data)
+    # SCNDataNew = scan("SCN", MainData["SCN"], bot_data)
     SA3DataNew = scan("SA3", MainData["SA3"], bot_data)
-    RUBDataNew = scan("RUB", MainData["RUB"], bot_data)
+    # RUBDataNew = scan("RUB", MainData["RUB"], bot_data)
     PARDataNew = scan("PAR", MainData["PAR"], bot_data)
     STDataNew = scan("ST", MainData["ST"], bot_data)
     PlantData = MainData["CST"]
@@ -29,8 +29,8 @@ def main(MainData, bot_data):
     TFDataNew = scan("TF", MainData["TF"], bot_data)
     PGDataNew = scan("PG", MainData["PG"], bot_data)
 
-    DataNew = {"SCN": SCNDataNew, "TF": TFDataNew, "ST": STDataNew, "PG": PGDataNew, "PAR": PARDataNew,
-               "RUB": RUBDataNew, "SA3": SA3DataNew, "CST": CSTDataNew}
+    DataNew = {"TF": TFDataNew, "ST": STDataNew, "PG": PGDataNew, "PAR": PARDataNew, "SA3": SA3DataNew,
+               "CST": CSTDataNew}
 
     return DataNew
 
@@ -38,6 +38,7 @@ def main(MainData, bot_data):
 
 
 def writeLastCycle():
+
     Now = datetime.now()
     ultimoCiclo = {"t": Now}
 
@@ -59,24 +60,9 @@ def writeLastCycle():
 
 def salvaAllarmi(data):
 
-    SCN1State = data["SCN"]["Plant state"]["SCN1"]
-    SCN2State = data["SCN"]["Plant state"]["SCN2"]
-
-    if SCN1State == "W" or SCN2State == "W":
-        SCNState = "W"
-
-    elif SCN1State == "A" or SCN2State == "A":
-        SCNState = "A"
-
-    else:
-        SCNState = "O"
-
     StatoAllarmi = {
-        "ST": data["ST"]["Plant state"], "PG": data["PG"]["Plant state"], "SCN": SCNState,
-        "SCN1": data["SCN"]["Plant state"]["SCN1"],
-        "SCN2": data["SCN"]["Plant state"]["SCN2"], "RUB": data["RUB"]["Plant state"],
-        "PAR": data["PAR"]["Plant state"], "TF": data["TF"]["Plant state"], "SA3": data["SA3"]["Plant state"],
-        "CST": data["CST"]["Plant state"]
+        "ST": data["ST"]["Plant state"], "PG": data["PG"]["Plant state"], "PAR": data["PAR"]["Plant state"],
+        "TF": data["TF"]["Plant state"], "SA3": data["SA3"]["Plant state"], "CST": data["CST"]["Plant state"],
     }
 
     with open("AlarmStatesBeta.csv", 'w') as csvfile:

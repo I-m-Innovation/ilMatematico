@@ -169,12 +169,12 @@ def calcolaPeriodiPV(data, Period, PlantTag):
         NSunOn = len(ISel[ISel>=50])
         NOn1 = len(P1Sel[(P1Sel > 0) & (ISel>=50)])
 
-        if NSunOn >0:
+        if NSunOn > 0:
 
             Av1 = NOn1 / NSunOn
 
             NSamples2 = len(t)
-            NOn1 = len(P2Sel[(P2Sel > 0) & (ISel>=50)])
+            NOn1 = len(P2Sel[(P2Sel > 0) & (ISel >= 50)])
             Av2 = NOn1 / NSunOn
         else:
             Av1 = float("nan")
@@ -207,6 +207,7 @@ def calcolaPeriodiPV(data, Period, PlantTag):
                     "Resa": [FTVSel],
                     "Availability Inv 1": [Av1], "Availability Inv 2": [Av2]}
     else:
+
         StatDict = {"EI": [EISel], "PMean": [PMean], "PDev": [PDev], "TModMean": [TModMean],
                     "TModDev": [TModDev], "Energy": [ESel], "etaMean": [etaMean], "etaDev": [etaDev],
                     "Resa": [FTVSel],
