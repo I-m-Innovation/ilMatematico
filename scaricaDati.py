@@ -651,7 +651,7 @@ def scaricaDatiSCN(token):
     t = pd.to_datetime(t)
 
     # prelevo l'informazione sull'ultimo timestamp
-    lastTimeStamp = t.iloc[-1]
+    lastTimeStamp = t.iloc[-1]+timedelta(minutes=5)
     if pd.isnull(lastTimeStamp):
         lastTimeStamp = t.iloc[-1]+timedelta(minutes=5)
 
