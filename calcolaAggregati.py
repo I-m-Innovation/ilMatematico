@@ -3,7 +3,7 @@ import numpy as np
 from ftplib import FTP
 from calcolaPeriodi import calcolaPeriodiPV, calcolaPeriodiHydro
 import csv
-
+import json
 
 def ExpectedEta(lastVar2, Plant, lastVar3):
 
@@ -121,32 +121,39 @@ def salvaUltimoTimeStamp(Data, Plant, DatiImpianti):
     PMinus = etaMinExpected * rho * g * lastVar2 * lastVar3 * 10.1974 / 1000
     PPlus = etaMaxExpected * rho * g * lastVar2 * lastVar3 * 10.1974 / 1000
 
+    PExpected = etaExpected * rho * g * lastVar2 * lastVar3 * 10.1974 / 1000
+    PDev = etaDev * rho * g * lastVar2 * lastVar3 * 10.1974 / 1000
+
     DatiImpianto = DatiImpianti[DatiImpianti["Tag"] == Plant]
     DatiImpianto = DatiImpianto.reset_index()
 
-    PN = DatiImpianto["potenza_installata_kWp"]
+    PN = DatiImpianto["potenza_installata_kWp"][0]
     Var2Max = DatiImpianto["Var2_max"][0]
     Var2Media = DatiImpianto["Var2_media"][0]
     Var2Dev = DatiImpianto["Var2_dev"][0]
 
     Var3Max = DatiImpianto["Var3_max"][0]
-    Var3Media = DatiImpianto["Var2_media"][0]
-    Var3Dev = DatiImpianto["Var2_dev"][0]
+    Var3Media = DatiImpianto["Var3_media"][0]
+    Var3Dev = DatiImpianto["Var3_dev"][0]
 
     DatiGauge = {
-        "Power": {"last_value": lastP, "MaxScala": PN, "inf": PMinus, "sup": PPlus},
+        "Power": {"last_value": lastP, "MaxScala": PN, "Media": PExpected, "Dev": PDev},
          "Var2": {"last_value": lastVar2, "MaxScala": Var2Max, "Media": Var2Media, "Dev": Var2Dev},
          "Var3": {"last_value": lastVar3, "MaxScala": Var3Max, "Media": Var3Media, "Dev": Var3Dev},
          "Eta": {"last_value": lastEta, "MaxScala": 100, "Media": etaExpected, "Dev": etaDev}
     }
 
+    # pd.DataFrame(DatiGauge).to_csv("dati gauge.csv", index=False)
+
     lastTSFileName = "dati gauge.csv"
+    pd.DataFrame.from_dict(DatiGauge).to_csv(lastTSFileName)
+    # with open("dati gauge.json", "w") as outfile:
+    #     json.dump(DatiGauge, outfile)
 
-    with open(lastTSFileName, 'w') as csvfile:
-
-        writer = csv.DictWriter(csvfile, DatiGauge.keys())
-        writer.writeheader()
-        writer.writerow(DatiGauge)
+    # with open(lastTSFileName, 'w') as csvfile:
+    #     writer = csv.DictWriter(csvfile, DatiGauge.keys())
+    #     writer.writeheader()
+    #     writer.writerow(DatiGauge)
 
     ftp = FTP("192.168.10.211", timeout=120)
     ftp.login('ftpdaticentzilio', 'Sd2PqAS.We8zBK')
@@ -157,7 +164,6 @@ def salvaUltimoTimeStamp(Data, Plant, DatiImpianti):
     File = open(fileName, "rb")
     ftp.storbinary(f"STOR " + fileName, File)
     ftp.close()
-
 
 
 def calcolaAggregatiHydro(Plant, data):
@@ -297,7 +303,6 @@ def calcolaAggregatiHydro(Plant, data):
     DatiImpianti = pd.read_excel("lista_impianti.xlsx")
 
     salvaUltimoTimeStamp(dataPeriodi, Plant, DatiImpianti)
-
 
 
 def calcolaAggregatiPV(Plant, data):
