@@ -1,3 +1,3 @@
 Power,Var2,Var3,Eta
-"{'last_value': 95.3164, 'MaxScala': 0    248.0
-Name: potenza_installata_kWp, dtype: float64, 'inf': 94.60870538208842, 'sup': 98.21551388994682}","{'last_value': 0.037156100000000004, 'MaxScala': 80.0, 'Media': 12.0, 'Dev': 15.0}","{'last_value': 30.4725, 'MaxScala': 50.0, 'Media': 12.0, 'Dev': 15.0}","{'last_value': 0.008581444834715396, 'MaxScala': 100, 'Media': 0.851206467353953, 'Dev': 0.015921955965837453}"
+"{'last_value': 67.5046, 'MaxScala': 0    248.0
+Name: potenza_installata_kWp, dtype: float64, 'inf': 65.79231260965093, 'sup': 69.58861008307014}","{'last_value': 0.0266635, 'MaxScala': 80.0, 'Media': 12.0, 'Dev': 15.0}","{'last_value': 30.7936, 'MaxScala': 50.0, 'Media': 12.0, 'Dev': 15.0}","{'last_value': 0.008380824376798124, 'MaxScala': 100, 'Media': 0.824121777723988, 'Dev': 0.02310969197384205}"
