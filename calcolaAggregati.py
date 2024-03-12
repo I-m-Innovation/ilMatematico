@@ -145,7 +145,7 @@ def salva_ultimo_timestamp(data, plant):
         "Eta": {"last_value": last_eta, "MaxScala": 100, "Media": eta_expected, "Dev": eta_dev}
     }
 
-    last_ts_filename = "dati gauge.csv"
+    last_ts_filename = plant+"_dati_gauge.csv"
     pd.DataFrame.from_dict(dati_gauge).to_csv(last_ts_filename)
 
     ftp = FTP("192.168.10.211", timeout=120)
@@ -185,7 +185,7 @@ def calcola_aggregati_hydro(plant, data):
     elif plant == "PG":
 
         t = data["Local"]
-        t = pd.to_datetime(t)
+        t = pd.to_datetime(t, dayfirst=True)
         q = data["PLC1_AI_FT_PORT_IST"] / 1000
         power = data["PLC1_AI_POT_ATTIVA"]
         bar = data["PLC1_AI_PT_TURBINA"]
