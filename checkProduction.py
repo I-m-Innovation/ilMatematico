@@ -1,6 +1,6 @@
 from quest2HigecoDefs import call2lastValue
 from datetime import datetime, timedelta
-from alertSystem import controllaFotovoltaico, controllaCentraleTG, controllaCST
+from alertSystem import controlla_fotovoltaico, controlla_centrale_tg, controlla_cst
 import pandas as pd
 import numpy as np
 
@@ -12,7 +12,7 @@ def checkSA3Production(PlantData):
     DatiIst = {"t": DB["t"][N-1], "Q": DB["Q"][N-1], "P": DB["P"][N-1], "Pressure": DB["Bar"][N-1]}
 
     try:
-        NewState = controllaCentraleTG(DatiIst, "SA3", PlantData["Plant state"])
+        NewState = controlla_centrale_tg(DatiIst, "SA3", PlantData["Plant state"])
 
     except Exception as err:
         print(err)
@@ -28,7 +28,7 @@ def checkTFProduction(PlantData):
     DatiIst = {"t": DB["Time"][N-1], "Q": DB["Charge"][N-1], "P": DB["Power"][N-1], "Pressure": DB["Jump"][N-1]}
 
     try:
-        TFNewState = controllaCentraleTG(DatiIst, "TF", PlantData["Plant state"])
+        TFNewState = controlla_centrale_tg(DatiIst, "TF", PlantData["Plant state"])
 
     except Exception as err:
         print(err)
@@ -49,7 +49,7 @@ def checkPGProduction(PlantData):
                "Pressure": DB["PLC1_AI_PT_TURBINA"][N-1]}
 
     try:
-        NewState = controllaCentraleTG(DatiIst, "PG", PlantData["Plant state"])
+        NewState = controlla_centrale_tg(DatiIst, "PG", PlantData["Plant state"])
 
     except Exception as err:
         print(err)
@@ -72,7 +72,7 @@ def checkCSTCharge(PlantData):
     lastQCST = np.mean(lastQs)
 
     try:
-        CSTNewState = controllaCST(lastQCST)
+        CSTNewState = controlla_cst(lastQCST)
 
     except Exception as err:
         print(err)
@@ -90,7 +90,7 @@ def checkSTProduction(PlantData):
                "Pressure": DB["Pressione [bar]"][N-1]}
 
     try:
-        STNewState = controllaCentraleTG(DatiIst, "ST", PlantData["Plant state"])
+        STNewState = controlla_centrale_tg(DatiIst, "ST", PlantData["Plant state"])
 
     except Exception as err:
         print(err)
@@ -119,7 +119,7 @@ def checkRUBProduction(token, PlantData):
 
     print("- Controllo dello stato della centrale...")
     try:
-        NewState = controllaFotovoltaico(Data, "RUB", PlantData["Plant state"], lastI)
+        NewState = controlla_fotovoltaico(Data, "RUB", PlantData["Plant state"], lastI)
     except Exception as err:
         print(err)
         NewState = "U"
@@ -145,13 +145,13 @@ def checkSCNProduction(token, Data):
         lastI = float(lastI.iloc[0])
 
     try:
-        SCN1NewState = controllaFotovoltaico(Data1, "SCN1", Data["Plant state"]["SCN1"], lastI)
+        SCN1NewState = controlla_fotovoltaico(Data1, "SCN1", Data["Plant state"]["SCN1"], lastI)
     except Exception as err:
         print(err)
         SCN1NewState = "U"
 
     try:
-        SCN2NewState = controllaFotovoltaico(Data2, "SCN1", Data["Plant state"]["SCN2"], lastI)
+        SCN2NewState = controlla_fotovoltaico(Data2, "SCN1", Data["Plant state"]["SCN2"], lastI)
     except Exception as err:
         print(err)
         SCN2NewState = "U"

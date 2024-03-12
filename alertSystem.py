@@ -3,212 +3,212 @@ import numpy as np
 import telebot
 
 
-def sendResume(text, TGMode):
+def send_resume(text, tg_mode):
 
     token = "6007635672:AAF_kA2nV4mrscssVRHW0Fgzsx0DjeZQIHU"
     bot = telebot.TeleBot(token)
-    RunId = "-821960472"
-    TestId = "-672088289"
+    run_id = "-821960472"
+    test_id = "-672088289"
 
-    if TGMode == "TEST":
-        ID = TestId
+    if tg_mode == "TEST":
+        tg_id = test_id
     else:
-        ID = RunId
-    bot.send_message(ID, text=text, parse_mode='Markdown')
+        tg_id = run_id
+    bot.send_message(tg_id, text=text, parse_mode='Markdown')
 
 
-def controllaCentraleTG(DatiIst, Plant, oldState):
+def controlla_centrale_tg(dati_ist, plant, old_state):
 
-    Now = np.datetime64(datetime.now(), 'm')
+    now = np.datetime64(datetime.now(), 'm')
 
-    dtTest = 30
-    if Plant == "SCN1":
-        lastP = DatiIst["P1"]
-        lastP = lastP[len(lastP) - 1]
-        lastT = DatiIst["lastP1t"]
-        lastT = np.datetime64(lastT[len(lastT) - 1], 'm')
+    dt_test = 30
+    if plant == "SCN1":
+        last_power = dati_ist["P1"]
+        last_power = last_power[len(last_power) - 1]
+        last_timestamp = dati_ist["lastP1t"]
+        last_timestamp = np.datetime64(last_timestamp[len(last_timestamp) - 1], 'm')
 
-    elif Plant == "SCN2":
-        lastP = DatiIst["P2"]
-        lastP = lastP[len(lastP) - 1]
-        lastT = DatiIst["lastP2t"]
-        lastT = np.datetime64(lastT[len(lastT) - 1], 'm')
+    elif plant == "SCN2":
+        last_power = dati_ist["P2"]
+        last_power = last_power[len(last_power) - 1]
+        last_timestamp = dati_ist["lastP2t"]
+        last_timestamp = np.datetime64(last_timestamp[len(last_timestamp) - 1], 'm')
 
-    elif Plant == "Rubino":
-        lastP = DatiIst["lastP"]
+    elif plant == "Rubino":
+        last_power = dati_ist["lastP"]
 
-        if lastP < 1.5:
-            lastP = 0
+        if last_power < 1.5:
+            last_power = 0
 
-        lastT = DatiIst["lastT"]
-        lastT = np.datetime64(lastT, 'm')
+        last_timestamp = dati_ist["lastT"]
+        last_timestamp = np.datetime64(last_timestamp, 'm')
 
-    elif Plant == "PAR":
-        Powers = np.array(DatiIst["P"])
-        lastP = Powers.item()
-        Times = np.array(DatiIst["t"])
-        lastT = Times.item()
-        lastT = np.datetime64(lastT, 'm')
+    elif plant == "PAR":
+        powers = np.array(dati_ist["P"])
+        last_power = powers.item()
+        times = np.array(dati_ist["t"])
+        last_timestamp = times.item()
+        last_timestamp = np.datetime64(last_timestamp, 'm')
 
     else:
 
         try:
-            lastP = DatiIst["P"]
-            lastT = DatiIst["t"]
-            lastT = np.datetime64(lastT, 'm')
+            last_power = dati_ist["P"]
+            last_timestamp = dati_ist["t"]
+            last_timestamp = np.datetime64(last_timestamp, 'm')
 
         except Exception as err:
             print(err)
-            lastT = []
-            lastP = []
+            last_timestamp = []
+            last_power = []
 
-    if Plant == "TF":
-        dtTest = 40
+    if plant == "TF":
+        dt_test = 40
 
-    dt = Now - lastT
+    dt = now - last_timestamp
 
-    if dt > dtTest or lastP == []:
+    if dt > dt_test or last_power == []:
 
-        if oldState == "W":
-            newState = "A"
+        if old_state == "W":
+            new_state = "A"
 
-        elif oldState == "A":
-            newState = "A"
+        elif old_state == "A":
+            new_state = "A"
         else:
-            newState = "W"
+            new_state = "W"
 
-    elif lastP <= 0:
-        newState = "A"
+    elif last_power <= 0:
+        new_state = "A"
 
     else:
-        newState = "O"
+        new_state = "O"
 
-    return newState
+    return new_state
 
 
-def controllaFotovoltaico(DatiIst, Plant, OldState, lastI):
+def controlla_fotovoltaico(dati_ist, plant, old_state, last_irr):
 
-    Now = np.datetime64(datetime.now(), 'm')
+    now = np.datetime64(datetime.now(), 'm')
 
-    if Plant == "SCN1":
-        lastP = DatiIst["lastP"]
-        lastT = DatiIst["lastT"]
-        lastT = np.datetime64(lastT, 'm')
+    if plant == "SCN1":
+        last_power = dati_ist["lastP"]
+        last_timestamp = dati_ist["lastT"]
+        last_timestamp = np.datetime64(last_timestamp, 'm')
 
-    elif Plant == "SCN2":
-        lastP = DatiIst["lastP"]
-        lastT = DatiIst["lastT"]
-        lastT = np.datetime64(lastT, 'm')
+    elif plant == "SCN2":
+        last_power = dati_ist["lastP"]
+        last_timestamp = dati_ist["lastT"]
+        last_timestamp = np.datetime64(last_timestamp, 'm')
 
-    elif Plant == "RUB":
-        lastP = DatiIst["lastP"]
-        lastT = DatiIst["lastT"]
-        lastT = np.datetime64(lastT, 'm')
+    elif plant == "RUB":
+        last_power = dati_ist["lastP"]
+        last_timestamp = dati_ist["lastT"]
+        last_timestamp = np.datetime64(last_timestamp, 'm')
 
-    elif Plant == "DI" or Plant == "ZG":
-        lastP = DatiIst["lastP"]
-        lastT = DatiIst["lastT"]
-        lastT = np.datetime64(lastT, 'm')
+    elif plant == "DI" or plant == "ZG":
+        last_power = dati_ist["lastP"]
+        last_timestamp = dati_ist["lastT"]
+        last_timestamp = np.datetime64(last_timestamp, 'm')
         
     else:
-        lastP = DatiIst["P"]
-        lastT = DatiIst["t"]
-        lastT = np.datetime64(lastT, 'm')
+        last_power = dati_ist["P"]
+        last_timestamp = dati_ist["t"]
+        last_timestamp = np.datetime64(last_timestamp, 'm')
 
-    dt = Now - lastT
+    dt = now - last_timestamp
 
-    if dt > 30 or lastP == [] or lastI == "Not Found":
+    if dt > 30 or last_power == [] or last_irr == "Not Found":
 
-        if OldState == "W":
-            newState = "A"
+        if old_state == "W":
+            new_state = "A"
 
-        elif OldState == "A":
-            newState = "A"
+        elif old_state == "A":
+            new_state = "A"
 
         else:
-            newState = "W"
+            new_state = "W"
 
     else:
 
-        if lastI > 50:
-            if lastP == 0:
-                newState = "A"
+        if last_irr > 50:
+            if last_power == 0:
+                new_state = "A"
 
             else:
-                newState = "O"
+                new_state = "O"
 
         else:
             print("Irraggiamento sotto soglia!")
-            newState = OldState
+            new_state = old_state
 
-    return newState
+    return new_state
 
 
-def sendTelegram(Old, New, TGMode, PlantName):
+def send_telegram(old, new, tg_mode, plant_name):
 
     token = "6007635672:AAF_kA2nV4mrscssVRHW0Fgzsx0DjeZQIHU"
     bot = telebot.TeleBot(token)
-    RunId = "-821960472"
-    TestId = "-672088289"
+    run_id = "-821960472"
+    test_id = "-672088289"
 
-    if TGMode == "TEST":
-        ID = TestId
+    if tg_mode == "TEST":
+        tg_id = test_id
     else:
-        ID = RunId
+        tg_id = run_id
 
-    if PlantName == "Condotta San Teodoro":
+    if plant_name == "Condotta San Teodoro":
 
-        if New == "OK":
-            if Old != "OK":
-                Text = "💦 *CONDOTTA SAN TEODORO*: Portata rientrata a regime!"
-                bot.send_message(ID, text=Text, parse_mode='Markdown')
+        if new == "OK":
+            if old != "OK":
+                text = "💦 *CONDOTTA SAN TEODORO*: Portata rientrata a regime!"
+                bot.send_message(tg_id, text=text, parse_mode='Markdown')
 
-            elif New == "A":
-                if Old != "A":
-                    Text = "🔴 *CONDOTTA SAN TEODORO*: Portata sotto soglia!"
-                    bot.send_message(ID, text=Text, parse_mode='Markdown')
+            elif new == "A":
+                if old != "A":
+                    text = "🔴 *CONDOTTA SAN TEODORO*: Portata sotto soglia!"
+                    bot.send_message(tg_id, text=text, parse_mode='Markdown')
 
-            elif New == "U":
+            elif new == "U":
 
-                if Old != "U":
-                    Text = "❓ *CONDOTTA SAN TEODORO*: Stato condotta non riconosciuto!"
-                    bot.send_message(ID, text=Text, parse_mode='Markdown')
+                if old != "U":
+                    text = "❓ *CONDOTTA SAN TEODORO*: Stato condotta non riconosciuto!"
+                    bot.send_message(tg_id, text=text, parse_mode='Markdown')
 
-        elif New == "A":
-            if Old != "A":
-                Text = "🔴 *CONDOTTA SAN TEODORO*: Portata sotto soglia!"
-                bot.send_message(ID, text=Text, parse_mode='Markdown')
-
-    else:
-
-        if New == "O":
-            if Old != "O":
-                Text = "🟢 *" + PlantName + "*: IN PRODUZIONE!"
-                bot.send_message(ID, text=Text, parse_mode='Markdown')
-
-        elif New == "W":
-            if Old != "W":
-                Text = "🟠 *" + PlantName + "*: FERMO o in NO LINK!"
-                bot.send_message(ID, text=Text, parse_mode='Markdown')
-
-        elif New == "A":
-            if Old != "A":
-                Text = "🔴 *" + PlantName + "*: FERMO o in NO LINK!"
-                bot.send_message(ID, text=Text, parse_mode='Markdown')
-
-        elif New == "U":
-
-            if Old != "U":
-                Text = "❓ *" + PlantName + "*: Stato centrale non riconosciuto!"
-                bot.send_message(ID, text=Text, parse_mode='Markdown')
-
-
-def controllaCST(lastQCST):
-
-    if lastQCST < 91:
-        newState = "A"
+        elif new == "A":
+            if old != "A":
+                text = "🔴 *CONDOTTA SAN TEODORO*: Portata sotto soglia!"
+                bot.send_message(tg_id, text=text, parse_mode='Markdown')
 
     else:
-        newState = "OK"
 
-    return newState
+        if new == "O":
+            if old != "O":
+                text = "🟢 *" + plant_name + "*: IN PRODUZIONE!"
+                bot.send_message(tg_id, text=text, parse_mode='Markdown')
+
+        elif new == "W":
+            if old != "W":
+                text = "🟠 *" + plant_name + "*: FERMO o in NO LINK!"
+                bot.send_message(tg_id, text=text, parse_mode='Markdown')
+
+        elif new == "A":
+            if old != "A":
+                text = "🔴 *" + plant_name + "*: FERMO o in NO LINK!"
+                bot.send_message(tg_id, text=text, parse_mode='Markdown')
+
+        elif new == "U":
+
+            if old != "U":
+                text = "❓ *" + plant_name + "*: Stato centrale non riconosciuto!"
+                bot.send_message(tg_id, text=text, parse_mode='Markdown')
+
+
+def controlla_cst(last_q_cst):
+
+    if last_q_cst < 91:
+        new_state = "A"
+
+    else:
+        new_state = "OK"
+
+    return new_state

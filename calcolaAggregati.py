@@ -1,401 +1,302 @@
 import pandas as pd
 import numpy as np
 from ftplib import FTP
-from calcolaPeriodi import calcolaPeriodiPV, calcolaPeriodiHydro
+from calcolaPeriodi import calcola_periodi
 
 
-def ExpectedEta(lastVar2, Plant, lastVar3):
+def expected_eta(last_var2, plant, last_var3):
 
-    if Plant == "SA3":
+    if plant == "SA3":
 
-        FileName = "rendimentoReale" + Plant + ".csv"
-        CurvaRendimento = pd.read_csv(FileName)
+        file_name = "rendimentoReale" + plant + ".csv"
+        curva_rendimento = pd.read_csv(file_name)
 
-        QTeo = CurvaRendimento["QOut"]
-        if Plant != "TF" and Plant != "SA3":
-            QTeo = QTeo / 1000
+        q_teo = curva_rendimento["QOut"]
+        if plant != "TF" and plant != "SA3":
+            q_teo = q_teo / 1000
 
-        etaTeo = CurvaRendimento["etaOut"]
-        etaDev = CurvaRendimento["devEta"]
+        eta_teo = curva_rendimento["etaOut"]
+        eta_dev = curva_rendimento["devEta"]
 
         # cerco i valori più vicini last Q
 
         i = 0
-        while lastVar2 > QTeo.iloc[i]:
+        while last_var2 > q_teo.iloc[i]:
             i = i + 1
 
         if i != 0:
-            etaAspettato = (etaTeo[i - 1] + etaTeo[i]) / 2
-            devAspettato = 0.5 * np.sqrt(etaDev[i - 1] ** 22 + etaDev[i] ** 2)
+            eta_aspettato = (eta_teo[i - 1] + eta_teo[i]) / 2
+            dev_aspettato = 0.5 * np.sqrt(eta_dev[i - 1] ** 22 + eta_dev[i] ** 2)
         else:
-            etaAspettato = (etaTeo[i] + etaTeo[i]) / 2
-            devAspettato = 0.5 * np.sqrt(etaDev[i] ** 2 + etaDev[i] ** 2)
+            eta_aspettato = (eta_teo[i] + eta_teo[i]) / 2
+            dev_aspettato = 0.5 * np.sqrt(eta_dev[i] ** 2 + eta_dev[i] ** 2)
 
-        etaMin = etaAspettato - devAspettato
-        etaMax = etaAspettato + devAspettato
+        eta_min = eta_aspettato - dev_aspettato
+        eta_max = eta_aspettato + dev_aspettato
 
     else:
 
-        if Plant != "TF" and Plant != "SA3" and Plant != "SCN":
-            lastVar2 = lastVar2 * 1000
+        if plant != "TF" and plant != "SA3" and plant != "SCN":
+            last_var2 = last_var2 * 1000
 
-        MeanFile = "MeanEta" + Plant + ".csv"
-        DevFile = "DevEta" + Plant + ".csv"
+        mean_file = "MeanEta" + plant + ".csv"
+        dev_file = "DevEta" + plant + ".csv"
 
-        CurvaRendimento = pd.read_csv(MeanFile, header=None)
-        devRendimento = pd.read_csv(DevFile, header=None)
+        curva_rendimento = pd.read_csv(mean_file, header=None)
+        dev_rendimento = pd.read_csv(dev_file, header=None)
 
-        AsseVar2 = CurvaRendimento.iloc[0, 1:]
-        AsseVar3 = CurvaRendimento.iloc[1:, 0]
+        asse_var2 = curva_rendimento.iloc[0, 1:]
+        asse_var3 = curva_rendimento.iloc[1:, 0]
 
         # cerco i valori più vicini last Q
 
         i = 0
-        Var2Test = AsseVar2.iloc[i]
-        # print(len(AsseVar2))
+        var2_test = asse_var2.iloc[i]
 
-        while lastVar2 > Var2Test and i < len(AsseVar2) - 1:
-            # print(str(i))
+        while last_var2 > var2_test and i < len(asse_var2) - 1:
             i = i + 1
-            Var2Test = AsseVar2.iloc[i]
+            var2_test = asse_var2.iloc[i]
 
         j = 0
-        Var3Test = AsseVar3.iloc[j]
+        var3_test = asse_var3.iloc[j]
 
-        if np.isnan(lastVar3):
-            lastVar3 = 0
-        FinalJ = 1
-        while lastVar3 > Var3Test and j < len(AsseVar3):
+        if np.isnan(last_var3):
+            last_var3 = 0
+        final_j = 1
+        while last_var3 > var3_test and j < len(asse_var3):
             j = j + 1
-            if j >= len(AsseVar3):
-                FinalJ = j - 1
-                Var3Test = AsseVar3.iloc[FinalJ]
+            if j >= len(asse_var3):
+                final_j = j - 1
+                var3_test = asse_var3.iloc[final_j]
 
             else:
-                FinalJ = j
-                Var3Test = AsseVar3.iloc[FinalJ]
+                final_j = j
+                var3_test = asse_var3.iloc[final_j]
 
-        etaAspettato = CurvaRendimento.iloc[FinalJ, i]
-        if np.isnan(etaAspettato):
-            etaAspettato = np.mean([CurvaRendimento.iloc[FinalJ - 1, i], CurvaRendimento.iloc[FinalJ + 1, i],
-                                    CurvaRendimento.iloc[FinalJ, i - 1], CurvaRendimento.iloc[FinalJ, i + 1]])
+        eta_aspettato = curva_rendimento.iloc[final_j, i]
+        if np.isnan(eta_aspettato):
+            eta_aspettato = np.mean([curva_rendimento.iloc[final_j - 1, i], curva_rendimento.iloc[final_j + 1, i],
+                                     curva_rendimento.iloc[final_j, i - 1], curva_rendimento.iloc[final_j, i + 1]])
 
-        devAspettato = devRendimento.iloc[FinalJ, i]
+        dev_aspettato = dev_rendimento.iloc[final_j, i]
 
-        etaMin = etaAspettato - devAspettato
-        etaMax = etaAspettato + devAspettato
+        eta_min = eta_aspettato - dev_aspettato
+        eta_max = eta_aspettato + dev_aspettato
 
-    return etaAspettato, etaMin, etaMax
+    return eta_aspettato, eta_min, eta_max
 
 
-def salvaUltimoTimeStamp(Data, Plant, DatiImpianti):
-
-    lastP = Data["P"].iloc[-1]
-    lastVar2 = Data["Q"].iloc[-1]
-    lastVar3 = Data["Bar"].iloc[-1]
-
-    rho = 1000
-    g = 9.81
-    lastEta = 1000 * lastP / (rho * g * lastVar2 * lastVar3 * 10.1974)
-
-    if Plant == "SA3":
-        etaExpected, etaMinExpected, etaMaxExpected = 0, 0, 0
-        etaDev = etaExpected - etaMinExpected
-
-    elif Plant == "CST":
-        etaAspettatoST, etaMinusST, etaPlusST = ExpectedEta(Data["QST"].iloc[-1], "ST", lastVar3)
-        etaAspettatoPAR, etaMinusPAR, etaPlusPAR = ExpectedEta(Data["QPAR"].iloc[-1], "PAR", lastVar3)
-        etaExpected = (70*etaAspettatoST + 25*etaAspettatoPAR)/95
-        devEtaST = etaAspettatoST - etaMinusST
-        devEtaPAR = etaAspettatoPAR - etaMinusPAR
-        etaDev = np.sqrt((70*devEtaST)**2 + (25*devEtaPAR)**2)/95
-
-    else:
-        etaExpected, etaMinExpected, etaMaxExpected = ExpectedEta(lastVar2, Plant, lastVar3)
-        etaDev = etaExpected - etaMinExpected
-
-    PExpected = etaExpected * rho * g * lastVar2 * lastVar3 * 10.1974 / 1000
-    PDev = etaDev * rho * g * lastVar2 * lastVar3 * 10.1974 / 1000
-
-    DatiImpianto = DatiImpianti[DatiImpianti["Tag"] == Plant]
-    DatiImpianto = DatiImpianto.reset_index()
-
-    PN = DatiImpianto["potenza_installata_kWp"][0]
-    Var2Max = DatiImpianto["Var2_max"][0]
-    Var2Media = DatiImpianto["Var2_media"][0]
-    Var2Dev = DatiImpianto["Var2_dev"][0]
-
-    Var3Max = DatiImpianto["Var3_max"][0]
-    Var3Media = DatiImpianto["Var3_media"][0]
-    Var3Dev = DatiImpianto["Var3_dev"][0]
-
-    DatiGauge = {
-        "Power": {"last_value": lastP, "MaxScala": PN, "Media": PExpected, "Dev": PDev},
-        "Var2": {"last_value": lastVar2, "MaxScala": Var2Max, "Media": Var2Media, "Dev": Var2Dev},
-        "Var3": {"last_value": lastVar3, "MaxScala": Var3Max, "Media": Var3Media, "Dev": Var3Dev},
-        "Eta": {"last_value": lastEta, "MaxScala": 100, "Media": etaExpected, "Dev": etaDev}
-    }
-
-    # pd.DataFrame(DatiGauge).to_csv("dati gauge.csv", index=False)
-
-    lastTSFileName = "dati gauge.csv"
-    pd.DataFrame.from_dict(DatiGauge).to_csv(lastTSFileName)
-    # with open("dati gauge.json", "w") as outfile:
-    #     json.dump(DatiGauge, outfile)
-
-    # with open(lastTSFileName, 'w') as csvfile:
-    #     writer = csv.DictWriter(csvfile, DatiGauge.keys())
-    #     writer.writeheader()
-    #     writer.writerow(DatiGauge)
+def salva_ultimo_timestamp(data, plant):
 
     ftp = FTP("192.168.10.211", timeout=120)
     ftp.login('ftpdaticentzilio', 'Sd2PqAS.We8zBK')
 
-    ftp.cwd('/dati/'+DatiImpianto["folder"][0])
+    ftp.cwd('/dati/Database_Produzione')
 
-    fileName = "dati gauge.csv"
-    File = open(fileName, "rb")
-    ftp.storbinary(f"STOR " + fileName, File)
+    g_file = open("lista_impianti.xlsx", "wb")
+    ftp.retrbinary('RETR lista_impianti.xlsx', g_file.write)
+    g_file.close()
+
+    dati_impianti = pd.read_excel("lista_impianti.xlsx")
+
+    last_power = data["P"].iloc[-1]
+    last_var2 = data["Q"].iloc[-1]
+    last_var3 = data["Bar"].iloc[-1]
+
+    rho = 1000
+    g = 9.81
+    last_eta = 1000 * last_power / (rho * g * last_var2 * last_var3 * 10.1974)
+
+    if plant == "SA3":
+        eta_expected, eta_min_expected, eta_max_expected = 0, 0, 0
+        eta_dev = eta_expected - eta_min_expected
+
+    elif plant == "CST":
+        eta_aspettato_st, eta_minus_st, eta_plus_st = expected_eta(data["QST"].iloc[-1], "ST", last_var3)
+        eta_aspettato_par, eta_minus_par, eta_plus_par = expected_eta(data["QPAR"].iloc[-1], "PAR", last_var3)
+        eta_expected = (70 * eta_aspettato_st + 25 * eta_aspettato_par) / 95
+        dev_eta_st = eta_aspettato_st - eta_minus_st
+        dev_eta_par = eta_aspettato_par - eta_minus_par
+        eta_dev = np.sqrt((70 * dev_eta_st) ** 2 + (25 * dev_eta_par) ** 2) / 95
+
+    else:
+        eta_expected, eta_min_expected, eta_max_expected = expected_eta(last_var2, plant, last_var3)
+        eta_dev = eta_expected - eta_min_expected
+
+    power_expected = eta_expected * rho * g * last_var2 * last_var3 * 10.1974 / 1000
+    power_dev = eta_dev * rho * g * last_var2 * last_var3 * 10.1974 / 1000
+
+    dati_impianto = dati_impianti[dati_impianti["Tag"] == plant]
+    dati_impianto = dati_impianto.reset_index()
+
+    pn = dati_impianto["potenza_installata_kWp"][0]
+    var2_max = dati_impianto["Var2_max"][0]
+    var2_media = dati_impianto["Var2_media"][0]
+    var2_dev = dati_impianto["Var2_dev"][0]
+
+    var3_max = dati_impianto["Var3_max"][0]
+    var3_media = dati_impianto["Var3_media"][0]
+    var3_dev = dati_impianto["Var3_dev"][0]
+
+    dati_gauge = {
+        "Power": {"last_value": last_power, "MaxScala": pn, "Media": power_expected, "Dev": power_dev},
+        "Var2": {"last_value": last_var2, "MaxScala": var2_max, "Media": var2_media, "Dev": var2_dev},
+        "Var3": {"last_value": last_var3, "MaxScala": var3_max, "Media": var3_media, "Dev": var3_dev},
+        "Eta": {"last_value": last_eta, "MaxScala": 100, "Media": eta_expected, "Dev": eta_dev}
+    }
+
+    last_ts_filename = "dati gauge.csv"
+    pd.DataFrame.from_dict(dati_gauge).to_csv(last_ts_filename)
+
+    ftp = FTP("192.168.10.211", timeout=120)
+    ftp.login('ftpdaticentzilio', 'Sd2PqAS.We8zBK')
+
+    ftp.cwd('/dati/' + dati_impianto["folder"][0])
+
+    file = open(last_ts_filename, "rb")
+    ftp.storbinary(f"STOR " + last_ts_filename, file)
     ftp.close()
 
 
-def calcolaAggregatiHydro(Plant, data):
+def calcola_aggregati_hydro(plant, data):
 
     g = 9.81
     rho = 1000
 
-    PST = []
-    PPAR = []
-    QST = []
-    QPAR = []
+    power_st = []
+    power_par = []
+    q_st = []
+    q_par = []
     eta = []
 
-    if Plant == "ST" or Plant == "PAR":
+    if plant == "ST" or plant == "PAR":
 
         t = data["timestamp"]
         t = pd.to_datetime(t)
-        Q = data["Portata [l/s]"] / 1000
-        P = data["Potenza [kW]"]
-        Bar = data["Pressione [bar]"]
-        Q4Eta = 10
-        if Plant == "PAR":
-            Q4Eta = 5
-        Q4Eta = Q4Eta / 1000
-        FTPFolder = '/dati/San_Teodoro'
+        q = data["Portata [l/s]"] / 1000
+        power = data["Potenza [kW]"]
+        bar = data["Pressione [bar]"]
+        q4eta = 10
+        if plant == "PAR":
+            q4eta = 5
+        q4eta = q4eta / 1000
+        ftp_folder = '/dati/San_Teodoro'
 
-    elif Plant == "PG":
+    elif plant == "PG":
 
         t = data["Local"]
         t = pd.to_datetime(t)
-        Q = data["PLC1_AI_FT_PORT_IST"] / 1000
-        P = data["PLC1_AI_POT_ATTIVA"]
-        Bar = data["PLC1_AI_PT_TURBINA"]
-        Q4Eta = 10
-        Q4Eta = Q4Eta / 1000
-        FTPFolder = '/dati/ponte_giurino'
+        q = data["PLC1_AI_FT_PORT_IST"] / 1000
+        power = data["PLC1_AI_POT_ATTIVA"]
+        bar = data["PLC1_AI_PT_TURBINA"]
+        q4eta = 10
+        q4eta = q4eta / 1000
+        ftp_folder = '/dati/ponte_giurino'
 
-    elif Plant == "TF":
+    elif plant == "TF":
 
         t = data["Time"]
         t = pd.to_datetime(t)
-        Q = data["Charge"]
-        P = data["Power"]
-        Bar = data["Jump"] / 10.1974
-        Q4Eta = 0.6
-        Q4Eta = Q4Eta
-        FTPFolder = '/dati/Torrino_Foresta'
+        q = data["Charge"]
+        power = data["Power"]
+        bar = data["Jump"] / 10.1974
+        q4eta = 0.6
+        q4eta = q4eta
+        ftp_folder = '/dati/Torrino_Foresta'
 
-    elif Plant == "SA3":
+    elif plant == "SA3":
 
         t = data["t"]
         t = pd.to_datetime(t, format='mixed')
-        Q = data["Q"]
-        P = data["P"]
-        Bar = data["Bar"] / 10.1974
-        Q4Eta = 0.6
-        Q4Eta = Q4Eta
-        FTPFolder = '/dati/SA3'
+        q = data["Q"]
+        power = data["P"]
+        bar = data["Bar"] / 10.1974
+        q4eta = 0.6
+        q4eta = q4eta
+        ftp_folder = '/dati/SA3'
 
-    elif Plant == "CST":
+    elif plant == "CST":
 
         t = data["t"]
-        Q = data["Q"] / 1000
-        QPAR = data["QPAR"]
-        QST = data["QST"]
-        PPAR = data["PPAR"]
-        PST = data["PST"]
-        P = data["P"]
-        Bar = data["Bar"]
+        q = data["Q"] / 1000
+        q_par = data["QPAR"]
+        q_st = data["QST"]
+        power_par = data["PPAR"]
+        power_st = data["PST"]
+        power = data["P"]
+        bar = data["Bar"]
         eta = data["eta"]
-        Q4Eta = 0
-        FTPFolder = '/dati/San_Teodoro'
+        q4eta = 0
+        ftp_folder = '/dati/San_Teodoro'
 
     else:
-        Q4Eta = 0
+        q4eta = 0
         t = data["DB"]["t"]
-        Q = data["DB"]["Q"]
-        P = data["DB"]["P"]
-        Bar = data["DB"]["Bar"]
+        q = data["DB"]["Q"]
+        power = data["DB"]["P"]
+        bar = data["DB"]["Bar"]
 
         eta = data["DB"]["eta"]
 
-        FTPFolder = '/dati/San_Teodoro'
+        ftp_folder = '/dati/San_Teodoro'
 
-    if Plant != "CST":
-        eta = np.divide(1000*P, rho * g * np.multiply(Q, Bar) * 10.1974)
-        dataPeriodi = {"t": t, "Q": Q, "P": P, "Bar": Bar, "Q4Eta": Q4Eta, "eta": eta}
+    if plant != "CST":
+        eta = np.divide(1000 * power, rho * g * np.multiply(q, bar) * 10.1974)
+        data_periodi = {"t": t, "Q": q, "P": power, "Bar": bar, "Q4Eta": q4eta, "eta": eta}
     else:
-        dataPeriodi = {"t": t, "QST": QST, "QPAR": QPAR, "Q": Q, "PST": PST, "PPAR": PPAR, "P": P, "Bar": Bar,
-                       "Q4Eta": Q4Eta, "eta": eta}
+        data_periodi = {"t": t, "QST": q_st, "QPAR": q_par, "Q": q, "PST": power_st, "PPAR": power_par, "P": power,
+                        "Bar": bar, "Q4Eta": q4eta, "eta": eta}
 
-    YearTL, YearStat = calcolaPeriodiHydro(Plant, dataPeriodi, "Annuale")
-    YearTLFileName = Plant+"YearTL.csv"
-    YearStatFileName = Plant+"YearStat.csv"
-    YearTL.to_csv(YearTLFileName, index=False)
-    YearStat.to_csv(YearStatFileName, index=False)
+    calcola_periodi(data_periodi, plant, ftp_folder)
 
-    # calcolo i dati mensili
-    MonthTL, MonthStat = calcolaPeriodiHydro(Plant, dataPeriodi, "Mensile")
-    MonthTLFileName = Plant+"MonthTL.csv"
-    MonthStatFileName = Plant+"MonthStat.csv"
-    MonthTL.to_csv(MonthTLFileName, index=False)
-    MonthStat.to_csv(MonthStatFileName, index=False)
-
-    # calcolo i dati giornalieri
-    last24TL, last24Stat = calcolaPeriodiHydro(Plant, dataPeriodi, "24h")
-    last24TLFileName = Plant+"last24hTL.csv"
-    last24StatFileName = Plant+"last24hStat.csv"
-    last24TL.to_csv(last24TLFileName, index=False)
-    last24Stat.to_csv(last24StatFileName, index=False)
-
-    ftp = FTP("192.168.10.211", timeout=120)
-    ftp.login('ftpdaticentzilio', 'Sd2PqAS.We8zBK')
-    ftp.cwd(FTPFolder)
-
-    File = open(YearTLFileName, "rb")
-    ftp.storbinary(f"STOR "+YearTLFileName, File)
-    File = open(YearStatFileName, "rb")
-    ftp.storbinary(f"STOR "+YearStatFileName, File)
-
-    File = open(MonthTLFileName, "rb")
-    ftp.storbinary(f"STOR "+MonthTLFileName, File)
-    File = open(MonthStatFileName, "rb")
-    ftp.storbinary(f"STOR "+MonthStatFileName, File)
-
-    File = open(last24TLFileName, "rb")
-    ftp.storbinary(f"STOR "+last24TLFileName, File)
-    File = open(last24StatFileName, "rb")
-    ftp.storbinary(f"STOR "+last24StatFileName, File)
-
-    ftp = FTP("192.168.10.211", timeout=120)
-    ftp.login('ftpdaticentzilio', 'Sd2PqAS.We8zBK')
-
-    ftp.cwd('/dati/Database_Produzione')
-
-    gFile = open("lista_impianti.xlsx", "wb")
-    ftp.retrbinary('RETR lista_impianti.xlsx', gFile.write)
-    gFile.close()
-
-    DatiImpianti = pd.read_excel("lista_impianti.xlsx")
-
-    salvaUltimoTimeStamp(dataPeriodi, Plant, DatiImpianti)
+    salva_ultimo_timestamp(data_periodi, plant)
 
 
-def calcolaAggregatiPV(Plant, data):
+def calcola_aggregati_pv(plant, data):
 
     t = data["t"]
     t = pd.to_datetime(t)
-    I = data["I"]
-    TMod = data["TMod"]
-    P1 = []
-    P2 = []
+    irr = data["I"]
+    temp_mod = data["TMod"]
+    power_1 = []
+    power_2 = []
 
-    if Plant == "SCN":
+    if plant == "SCN":
 
-        P1 = data["P1"]
-        P2 = data["P2"]
+        power_1 = data["P1"]
+        power_2 = data["P2"]
 
-        P = P1 + P2
-        PN = 926.64
+        power = power_1 + power_2
+        pn = 926.64
 
-        FTPFolder = '/dati/SCN'
-
-    else:
-
-        P = data["P"]
-
-        PN = 997.44
-
-        FTPFolder = '/dati/Rubino'
-
-    eta = np.divide(1000 * P, I) / PN
-    if Plant == "SCN":
-        dataPeriodi = {"t": t, "I": I, "P1": P1, "P2": P2, "TMod": TMod, "eta": eta, "P": P,
-                       "Tariffa": data["Tariffa"], "PN": data["PN"]}
-    else:
-        dataPeriodi = {"t": t, "I": I, "TMod": TMod, "eta": eta, "P": P, "Tariffa": data["Tariffa"],
-                       "PN": data["PN"]}
-
-    YearTL, YearStat = calcolaPeriodiPV(dataPeriodi, "Annuale", Plant)
-    YearTLFileName = Plant + "YearTL.csv"
-    YearStatFileName = Plant + "YearStat.csv"
-    YearTL.to_csv(YearTLFileName, index=False)
-    YearStat.to_csv(YearStatFileName, index=False)
-
-    # calcolo i dati mensili
-    MonthTL, MonthStat = calcolaPeriodiPV(dataPeriodi, "Mensile", Plant)
-    MonthTLFileName = Plant + "MonthTL.csv"
-    MonthStatFileName = Plant + "MonthStat.csv"
-    MonthTL.to_csv(MonthTLFileName, index=False)
-    MonthStat.to_csv(MonthStatFileName, index=False)
-
-    # calcolo i dati giornalieri
-    last24TL, last24Stat = calcolaPeriodiPV(dataPeriodi, "24h", Plant)
-    last24TLFileName = Plant + "last24hTL.csv"
-    last24StatFileName = Plant + "last24hStat.csv"
-    last24TL.to_csv(last24TLFileName, index=False)
-    last24Stat.to_csv(last24StatFileName, index=False)
-
-    ftp = FTP("192.168.10.211", timeout=120)
-    ftp.login('ftpdaticentzilio', 'Sd2PqAS.We8zBK')
-
-    ftp.cwd('/dati/Database_Produzione')
-
-    gFile = open("lista_impianti.xlsx", "wb")
-    ftp.retrbinary('RETR lista_impianti.xlsx', gFile.write)
-    gFile.close()
-
-    DatiImpianti = pd.read_excel("lista_impianti.xlsx")
-
-    # calcolo i dati istantanei
-    salvaUltimoTimeStamp(dataPeriodi, Plant, DatiImpianti)
-
-    ftp = FTP("192.168.10.211", timeout=120)
-    ftp.login('ftpdaticentzilio', 'Sd2PqAS.We8zBK')
-    ftp.cwd(FTPFolder)
-
-    File = open(YearTLFileName, "rb")
-    ftp.storbinary(f"STOR " + YearTLFileName, File)
-    File = open(YearStatFileName, "rb")
-    ftp.storbinary(f"STOR " + YearStatFileName, File)
-
-    File = open(MonthTLFileName, "rb")
-    ftp.storbinary(f"STOR " + MonthTLFileName, File)
-    File = open(MonthStatFileName, "rb")
-    ftp.storbinary(f"STOR " + MonthStatFileName, File)
-
-    File = open(last24TLFileName, "rb")
-    ftp.storbinary(f"STOR " + last24TLFileName, File)
-    File = open(last24StatFileName, "rb")
-    ftp.storbinary(f"STOR " + last24StatFileName, File)
-
-    ftp.close()
-
-
-def calcolaAggregati(Plant, data):
-
-    if Plant == "SCN" or Plant == "RUB":
-        calcolaAggregatiPV(Plant, data)
+        ftp_folder = '/dati/SCN'
 
     else:
-        calcolaAggregatiHydro(Plant, data)
+
+        power = data["P"]
+
+        pn = 997.44
+
+        ftp_folder = '/dati/Rubino'
+
+    eta = np.divide(1000 * power, irr) / pn
+
+    if plant == "SCN":
+        data_periodi = {"t": t, "I": irr, "P1": power_1, "P2": power_2, "TMod": temp_mod, "eta": eta, "P": power,
+                        "Tariffa": data["Tariffa"], "PN": data["PN"]}
+    else:
+        data_periodi = {"t": t, "I": irr, "TMod": temp_mod, "eta": eta, "P": power, "Tariffa": data["Tariffa"],
+                        "PN": data["PN"]}
+
+    calcola_periodi(data_periodi, plant, ftp_folder)
+
+    salva_ultimo_timestamp(data_periodi, plant)
+
+
+def calcola_aggregati(plant, data):
+
+    if plant == "SCN" or plant == "RUB":
+        calcola_aggregati_pv(plant, data)
+
+    else:
+        calcola_aggregati_hydro(plant, data)

@@ -2,91 +2,91 @@ from datetime import datetime
 from colorama import Fore, Style
 from quest2HigecoDefs import authenticateHigeco
 from checkProduction import checkProduction
-from alertSystem import sendTelegram
+from alertSystem import send_telegram
 from displayState import displayState
 from scaricaDati import scaricaDati
-from calcolaAggregati import calcolaAggregati
+from calcolaAggregati import calcola_aggregati
 
 
-def main(Plant, Data, TGMode):
+def main(plant, data_in, tg_mode):
 
-    if Plant == "SCN" or Plant == "RUB":
+    if plant == "SCN" or plant == "RUB":
         token = authenticateHigeco("SCN")
-        data = scaricaDati(Plant, token, [])
+        database = scaricaDati(plant, token, [])
 
     else:
         token = []
-        data = scaricaDati(Plant, token, Data)
-        Data["DB"] = data
+        database = scaricaDati(plant, token, data_in)
+        data_in["DB"] = database
 
     # controllo se l'impianto funziona e in caso mando l'allarme
-    NewState = checkProduction(Plant, token, Data)
+    new_state = checkProduction(plant, token, data_in)
 
-    if Plant == "SCN":
+    if plant == "SCN":
         # mando gli allarmi se serve
-        sendTelegram(Data["Plant state"]["SCN1"], NewState["SCN1"], TGMode, "SCN Pilota - Inverter 1")
-        sendTelegram(Data["Plant state"]["SCN2"], NewState["SCN2"], TGMode, "SCN Pilota - Inverter 2")
+        send_telegram(data_in["Plant state"]["SCN1"], new_state["SCN1"], tg_mode, "SCN Pilota - Inverter 1")
+        send_telegram(data_in["Plant state"]["SCN2"], new_state["SCN2"], tg_mode, "SCN Pilota - Inverter 2")
 
-        Data["Plant state"]["SCN1"] = NewState["SCN1"]
-        displayState(NewState["SCN1"])
-        Data["Plant state"]["SCN2"] = NewState["SCN2"]
-        displayState(NewState["SCN2"])
+        database["Plant state"]["SCN1"] = new_state["SCN1"]
+        displayState(new_state["SCN1"])
+        database["Plant state"]["SCN2"] = new_state["SCN2"]
+        displayState(new_state["SCN2"])
 
     else:
-        sendTelegram(Data["Plant state"], NewState, TGMode, Data["PlantName"])
-        Data["Plant state"] = NewState
-        displayState(NewState)
+        send_telegram(data_in["Plant state"], new_state, tg_mode, data_in["PlantName"])
+        data_in["Plant state"] = new_state
+        displayState(new_state)
 
-    calcolaAggregati(Plant, data)
+    calcola_aggregati(plant, database)
 
-    return Data
+    return data_in
 
 
-def scan(Plant, Data, botData):
+def scan(plant, data, bot_data):
 
-    if Plant == "SCN":
-        PlantName = "SCN Pilota"
-    elif Plant == "RUB":
-        PlantName = "Rubino"
-    elif Plant == "ST":
-        PlantName = "San Teodoro"
-    elif Plant == "CST":
-        PlantName = "Condotta San Teodoro"
-    elif Plant == "PAR":
-        PlantName = "Partitore"
-    elif Plant == "PG":
-        PlantName = "Ponte Giurino"
-    elif Plant == "TF":
-        PlantName = "Torrino Foresta"
-    elif Plant == "SA3":
-        PlantName = "SA3"
+    if plant == "SCN":
+        plant_name = "SCN Pilota"
+    elif plant == "RUB":
+        plant_name = "Rubino"
+    elif plant == "ST":
+        plant_name = "San Teodoro"
+    elif plant == "CST":
+        plant_name = "Condotta San Teodoro"
+    elif plant == "PAR":
+        plant_name = "Partitore"
+    elif plant == "PG":
+        plant_name = "Ponte Giurino"
+    elif plant == "TF":
+        plant_name = "Torrino Foresta"
+    elif plant == "SA3":
+        plant_name = "SA3"
     else:
-        PlantName = "IMPIANTO IGNOTO"
+        plant_name = "IMPIANTO IGNOTO"
 
-    Data["PlantName"] = PlantName
+    data["PlantName"] = plant_name
 
-    TestId = "-672088289"
-    mode = botData["mode"]
-    bot = botData["bot"]
+    test_id = "-672088289"
+    mode = bot_data["mode"]
+    bot = bot_data["bot"]
 
-    Sep = "------------------------------------------------------------------------"
+    sep = "------------------------------------------------------------------------"
     try:
 
-        print(Sep)
-        Now = datetime.now()
-        print(str(Now) + f': inizio calcolo di {Fore.YELLOW}'+PlantName+f'{Style.RESET_ALL}')
+        print(sep)
+        now = datetime.now()
+        print(str(now) + f': inizio calcolo di {Fore.YELLOW}' + plant_name + f'{Style.RESET_ALL}')
 
-        PlantData = Data
-        DataNew = main(Plant, PlantData, mode)
+        plant_data = data
+        data_new = main(plant, plant_data, mode)
 
-        message = "Dati di " + PlantName + " salvati alle " + str(Now)
+        message = "Dati di " + plant_name + " salvati alle " + str(now)
         print(f'-- {Fore.GREEN}' + message + f'{Style.RESET_ALL}')
 
     except Exception as err:
 
-        message = "ERRORE IN "+PlantName+": " + str(err)
-        bot.send_message(TestId, text=message)
+        message = "ERRORE IN " + plant_name + ": " + str(err)
+        bot.send_message(test_id, text=message)
         print(f'-- {Fore.RED}' + message + f'{Style.RESET_ALL}')
-        DataNew = Data
+        data_new = data
 
-    return DataNew
+    return data_new
