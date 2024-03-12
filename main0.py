@@ -83,7 +83,7 @@ def salva_allarmi(data):
 
 
 TGmode = "TEST"
-# TGmode = "RUN"
+TGmode = "RUN"
 
 print("Inizializzazione del sistema.")
 # inizializzo lo stato delle centrali in "O" in modo che vengano rinnovati tutti gli allarmi vecchi
