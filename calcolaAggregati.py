@@ -2,8 +2,7 @@ import pandas as pd
 import numpy as np
 from ftplib import FTP
 from calcolaPeriodi import calcolaPeriodiPV, calcolaPeriodiHydro
-import csv
-import json
+
 
 def ExpectedEta(lastVar2, Plant, lastVar3):
 
@@ -91,14 +90,13 @@ def ExpectedEta(lastVar2, Plant, lastVar3):
 
 def salvaUltimoTimeStamp(Data, Plant, DatiImpianti):
 
-    last_t = Data["t"].iloc[-1]
     lastP = Data["P"].iloc[-1]
     lastVar2 = Data["Q"].iloc[-1]
     lastVar3 = Data["Bar"].iloc[-1]
 
     rho = 1000
     g = 9.81
-    lastEta = lastP / (rho * g *lastVar2 * lastVar3 )
+    lastEta = 1000 * lastP / (rho * g * lastVar2 * lastVar3 * 10.1974)
 
     if Plant == "SA3":
         etaExpected, etaMinExpected, etaMaxExpected = 0, 0, 0
@@ -111,15 +109,10 @@ def salvaUltimoTimeStamp(Data, Plant, DatiImpianti):
         devEtaST = etaAspettatoST - etaMinusST
         devEtaPAR = etaAspettatoPAR - etaMinusPAR
         etaDev = np.sqrt((70*devEtaST)**2 + (25*devEtaPAR)**2)/95
-        etaMinExpected = etaExpected - etaDev
-        etaMaxExpected = etaExpected + etaDev
 
     else:
         etaExpected, etaMinExpected, etaMaxExpected = ExpectedEta(lastVar2, Plant, lastVar3)
         etaDev = etaExpected - etaMinExpected
-
-    PMinus = etaMinExpected * rho * g * lastVar2 * lastVar3 * 10.1974 / 1000
-    PPlus = etaMaxExpected * rho * g * lastVar2 * lastVar3 * 10.1974 / 1000
 
     PExpected = etaExpected * rho * g * lastVar2 * lastVar3 * 10.1974 / 1000
     PDev = etaDev * rho * g * lastVar2 * lastVar3 * 10.1974 / 1000
@@ -138,9 +131,9 @@ def salvaUltimoTimeStamp(Data, Plant, DatiImpianti):
 
     DatiGauge = {
         "Power": {"last_value": lastP, "MaxScala": PN, "Media": PExpected, "Dev": PDev},
-         "Var2": {"last_value": lastVar2, "MaxScala": Var2Max, "Media": Var2Media, "Dev": Var2Dev},
-         "Var3": {"last_value": lastVar3, "MaxScala": Var3Max, "Media": Var3Media, "Dev": Var3Dev},
-         "Eta": {"last_value": lastEta, "MaxScala": 100, "Media": etaExpected, "Dev": etaDev}
+        "Var2": {"last_value": lastVar2, "MaxScala": Var2Max, "Media": Var2Media, "Dev": Var2Dev},
+        "Var3": {"last_value": lastVar3, "MaxScala": Var3Max, "Media": Var3Media, "Dev": Var3Dev},
+        "Eta": {"last_value": lastEta, "MaxScala": 100, "Media": etaExpected, "Dev": etaDev}
     }
 
     # pd.DataFrame(DatiGauge).to_csv("dati gauge.csv", index=False)
@@ -173,6 +166,8 @@ def calcolaAggregatiHydro(Plant, data):
 
     PST = []
     PPAR = []
+    QST = []
+    QPAR = []
     eta = []
 
     if Plant == "ST" or Plant == "PAR":
@@ -250,7 +245,8 @@ def calcolaAggregatiHydro(Plant, data):
         eta = np.divide(1000*P, rho * g * np.multiply(Q, Bar) * 10.1974)
         dataPeriodi = {"t": t, "Q": Q, "P": P, "Bar": Bar, "Q4Eta": Q4Eta, "eta": eta}
     else:
-        dataPeriodi = {"t": t, "QST": QST, "QPAR": QPAR, "Q": Q, "PST": PST, "PPAR": PPAR, "P": P, "Bar": Bar, "Q4Eta": Q4Eta, "eta": eta}
+        dataPeriodi = {"t": t, "QST": QST, "QPAR": QPAR, "Q": Q, "PST": PST, "PPAR": PPAR, "P": P, "Bar": Bar,
+                       "Q4Eta": Q4Eta, "eta": eta}
 
     YearTL, YearStat = calcolaPeriodiHydro(Plant, dataPeriodi, "Annuale")
     YearTLFileName = Plant+"YearTL.csv"
@@ -372,9 +368,7 @@ def calcolaAggregatiPV(Plant, data):
     DatiImpianti = pd.read_excel("lista_impianti.xlsx")
 
     # calcolo i dati istantanei
-    lastTS = salvaUltimoTimeStamp(dataPeriodi, Plant, DatiImpianti)
-    lastTSFileName = Plant + "lastTimeStamp.csv"
-    lastTS.to_csv(lastTSFileName, index=False)
+    salvaUltimoTimeStamp(dataPeriodi, Plant, DatiImpianti)
 
     ftp = FTP("192.168.10.211", timeout=120)
     ftp.login('ftpdaticentzilio', 'Sd2PqAS.We8zBK')
@@ -394,9 +388,6 @@ def calcolaAggregatiPV(Plant, data):
     ftp.storbinary(f"STOR " + last24TLFileName, File)
     File = open(last24StatFileName, "rb")
     ftp.storbinary(f"STOR " + last24StatFileName, File)
-
-    File = open(lastTSFileName, "rb")
-    ftp.storbinary(f"STOR " + lastTSFileName, File)
 
     ftp.close()
 

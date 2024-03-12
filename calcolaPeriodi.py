@@ -41,18 +41,10 @@ def calcolaPeriodiHydro(Plant, data, Period):
 
     PSTSel = []
     PPARSel = []
-    PSTMean = []
-    PSTDev = []
-    PPARMean = []
-    PPARDev = []
 
     if Plant == "CST":
         PSTSel = PST[t >= tStart]
         PPARSel = PPAR[t >= tStart]
-        PSTMean = np.mean(PSTSel)
-        PSTDev = np.std(PSTSel)
-        PPARMean = np.mean(PPARSel)
-        PPARDev = np.std(PPARSel)
 
     BarSel = Bar[t >= tStart]
     tSel = t[t >= tStart]
@@ -64,8 +56,8 @@ def calcolaPeriodiHydro(Plant, data, Period):
     BarMean = np.mean(BarSel)
     BarDev = np.std(BarSel)
 
-    etaMean = np.mean(etaSel[(QSel >= Q4Eta) & (etaSel < 1) & (np.isinf(etaSel)==0)])
-    etaDev = np.std(etaSel[(QSel >= Q4Eta) & (etaSel < 1) & (np.isinf(etaSel)==0)])
+    etaMean = np.mean(etaSel[(QSel >= Q4Eta) & (etaSel < 1) & (np.isinf(etaSel) == 0)])
+    etaDev = np.std(etaSel[(QSel >= Q4Eta) & (etaSel < 1) & (np.isinf(etaSel) == 0)])
 
     ESel = PMean * (dt.days * 24 + dt.seconds / 3600)
     FERSel = ESel * Tariffa
@@ -99,7 +91,6 @@ def calcolaPeriodiPV(data, Period, PlantTag):
     Now = datetime.now()
 
     Tariffa = data["Tariffa"][0]
-    PN = data["PN"][0]
 
     t = data["t"]
     I = data["I"]
@@ -132,16 +123,12 @@ def calcolaPeriodiPV(data, Period, PlantTag):
     etaSel = eta[t >= tStart]
 
     IMean = np.mean(ISel)
-    IDev = np.std(ISel)
+    P1 = []
+    P2 = []
 
     if PlantTag == "SCN":
         P1Sel = P1[t >= tStart]
         P2Sel = P2[t >= tStart]
-        P1Mean = np.mean(P1Sel)
-        P1Dev = np.std(P1Sel)
-        P2Mean = np.mean(P2Sel)
-        P2Dev = np.std(P2Sel)
-
         PSel = P1Sel + P2Sel
 
     else:
@@ -157,6 +144,19 @@ def calcolaPeriodiPV(data, Period, PlantTag):
 
     EISel = IMean * (dt.days * 24 + dt.seconds / 3600)
 
+    P1Mean = []
+    P2Mean = []
+    P1Sel = []
+    P2Sel = []
+    E1Sel = []
+    E2Sel = []
+    eta1Mean = []
+    eta2Mean = []
+
+    Av = []
+    Av1 = []
+    Av2 = []
+
     if PlantTag == "SCN":
 
         E1Sel = P1Mean * (dt.days * 24 + dt.seconds / 3600)
@@ -166,14 +166,12 @@ def calcolaPeriodiPV(data, Period, PlantTag):
         eta2Mean = E2Sel / EISel / PN[0]
 
         # NSamples1 = len(t)
-        NSunOn = len(ISel[ISel>=50])
-        NOn1 = len(P1Sel[(P1Sel > 0) & (ISel>=50)])
+        NSunOn = len(ISel[ISel >= 50])
+        NOn1 = len(P1Sel[(P1Sel > 0) & (ISel >= 50)])
 
         if NSunOn > 0:
 
             Av1 = NOn1 / NSunOn
-
-            NSamples2 = len(t)
             NOn1 = len(P2Sel[(P2Sel > 0) & (ISel >= 50)])
             Av2 = NOn1 / NSunOn
         else:
@@ -182,9 +180,8 @@ def calcolaPeriodiPV(data, Period, PlantTag):
 
     else:
 
-        NSamples = len(t)
-        NSunOn = len(ISel[ISel>=50])
-        NOn = len(PSel[(PSel > 0) & (ISel>=50)])
+        NSunOn = len(ISel[ISel >= 50])
+        NOn = len(PSel[(PSel > 0) & (ISel >= 50)])
         if NSunOn > 0:
             Av = NOn / NSunOn
         else:
