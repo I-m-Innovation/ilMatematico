@@ -17,12 +17,13 @@ p = psutil.Process(os.getpid())
 
 def main(main_data, bot_data):
 
-    # SCNDataNew = scan("SCN", MainData["SCN"], bot_data)
-    sa3_data_new = scan("SA3", main_data["SA3"], bot_data)
-    # RUBDataNew = scan("RUB", MainData["RUB"], bot_data)
     par_data_new = scan("PAR", main_data["PAR"], bot_data)
     st_data_new = scan("ST", main_data["ST"], bot_data)
     plant_data = main_data["CST"]
+    # SCNDataNew = scan("SCN", MainData["SCN"], bot_data)
+    sa3_data_new = scan("SA3", main_data["SA3"], bot_data)
+    # RUBDataNew = scan("RUB", MainData["RUB"], bot_data)
+
     plant_data["ST"] = st_data_new
     plant_data["PAR"] = par_data_new
     cst_data_new = scan("CST", plant_data, bot_data)
@@ -84,6 +85,10 @@ def salva_allarmi(data):
 
 TGmode = "TEST"
 # TGmode = "RUN"
+if TGmode == "TEST":
+    print("Funzionamento in modalità TEST!")
+else:
+    print("Funzionamento in modalità RUN!")
 
 print("Inizializzazione del sistema.")
 # inizializzo lo stato delle centrali in "O" in modo che vengano rinnovati tutti gli allarmi vecchi

@@ -112,8 +112,8 @@ def salva_ultimo_timestamp(data, plant):
         eta_dev = eta_expected - eta_min_expected
 
     elif plant == "CST":
-        eta_aspettato_st, eta_minus_st, eta_plus_st = expected_eta(data["QST"].iloc[-1], "ST", last_var3)
-        eta_aspettato_par, eta_minus_par, eta_plus_par = expected_eta(data["QPAR"].iloc[-1], "PAR", last_var3)
+        eta_aspettato_st, eta_minus_st, eta_plus_st = expected_eta(data["QST"].iloc[-1]/1000, "ST", last_var3)
+        eta_aspettato_par, eta_minus_par, eta_plus_par = expected_eta(data["QPAR"].iloc[-1]/1000, "PAR", last_var3)
         eta_expected = (70 * eta_aspettato_st + 25 * eta_aspettato_par) / 95
         dev_eta_st = eta_aspettato_st - eta_minus_st
         dev_eta_par = eta_aspettato_par - eta_minus_par
