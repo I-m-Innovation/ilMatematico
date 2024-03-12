@@ -243,7 +243,8 @@ def sistemaCartellaFTPPG():
             ftp.retrbinary('RETR DBPGNEW.csv', gFile.write)
             gFile.close()
 
-            DB = pd.read_csv("DBPGNEW.csv", on_bad_lines='skip', header='infer', delimiter=',')
+            DB = pd.read_csv("DBPGNEW.csv", on_bad_lines='skip', header='infer', delimiter=',',
+                             low_memory=False)
             gFile = open(currFile, "wb")
             ftp.retrbinary('RETR '+currFile, gFile.write)
             gFile.close()
