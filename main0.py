@@ -86,7 +86,8 @@ def salva_allarmi(data):
 
 
 TGmode = "TEST"
-# TGmode = "RUN"
+TGmode = "RUN"
+
 if TGmode == "TEST":
     print("Funzionamento in modalità TEST!")
 else:
