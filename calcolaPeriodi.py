@@ -44,7 +44,10 @@ def calcola_periodi_hydro(plant, data, period):
     t_start, dt = detect_t_start(period)
 
     q_sel = q[t >= t_start]
+    q_sel = q_sel[np.isnan(q_sel) == 0]
+
     power_sel = power[t >= t_start]
+    power_sel = power_sel[np.isnan(power_sel) == 0]
     power_mean = np.mean(power_sel)
     power_dev = np.std(power_sel)
 
@@ -56,6 +59,8 @@ def calcola_periodi_hydro(plant, data, period):
         power_par_sel = power_par[t >= t_start]
 
     bar_sel = bar[t >= t_start]
+    bar_sel = bar_sel[np.isnan(bar_sel) == 0]
+
     t_sel = t[t >= t_start]
     eta_sel = eta[t >= t_start]
 
