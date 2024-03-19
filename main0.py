@@ -86,7 +86,7 @@ def salva_allarmi(data):
 
 
 TGmode = "TEST"
-TGmode = "RUN"
+#TGmode = "RUN"
 
 if TGmode == "TEST":
     print("Funzionamento in modalità TEST!")
@@ -185,11 +185,79 @@ def send_last24_resa(mode):
 
 isSent = 0
 
+
+def save_portale_impianti_hp():
+
+    st_data = pd.read_csv("ST_dati_gauge.csv")
+    par_data = pd.read_csv("PAR_dati_gauge.csv")
+    tf_data = pd.read_csv("TF_dati_gauge.csv")
+    pg_data = pd.read_csv("PG_dati_gauge.csv")
+
+    st_power = st_data["Power"][0]
+    par_power = par_data["Power"][0]
+    tf_power = tf_data["Power"][0]
+    pg_power = pg_data["Power"][0]
+
+    st_eta = st_data["Eta"][0]
+    par_eta = par_data["Eta"][0]
+    tf_eta = tf_data["Eta"][0]
+    pg_eta =pg_data["Eta"][0]
+
+    st_day = pd.read_csv("STDayStat.csv")
+    par_day = pd.read_csv("PARDayStat.csv")
+    tf_day = pd.read_csv("TFDayStat.csv")
+    pg_day = pd.read_csv("PGDayStat.csv")
+
+    energy_st_day = st_day["Energy"][0]
+    energy_par_day = par_day["Energy"][0]
+    energy_tf_day = tf_day["Energy"][0]
+    energy_pg_day = pg_day["Energy"][0]
+
+    alarms = pd.read_csv("AlarmStatesBeta.csv")
+
+    st_alarm = alarms["ST"][0]
+    par_alarm = alarms["PAR"][0]
+    tf_alarm = alarms["TF"][0]
+    pg_alarm = alarms["PG"][0]
+
+    st_row = {"TAG": "ST", "Name": "San Teodoro", "last_power": st_power, "last_eta": st_eta, "state": st_alarm,
+              "Energy": energy_st_day}
+    par_row = {"TAG": "PAR", "Name": "Partitore", "last_power": par_power, "last_eta": par_eta, "state": par_alarm,
+               "Energy": energy_par_day}
+    tf_row = {"TAG": "TF", "Name": "Torrino Foresta", "last_power": tf_power, "last_eta": tf_eta, "state": tf_alarm,
+              "Energy": energy_tf_day}
+    pg_row = {"TAG": "PG", "Name": "Ponte Giurino", "last_power": pg_power, "last_eta": pg_eta, "state": pg_alarm,
+              "Energy": energy_pg_day}
+
+    st_df = pd.DataFrame(st_row, index=[0])
+    par_df = pd.DataFrame(par_row, index=[0])
+    tf_df = pd.DataFrame(tf_row, index=[0])
+    pg_df = pd.DataFrame(pg_row, index=[0])
+
+    df = pd.concat([st_df, par_df, tf_df, pg_df])
+
+    df = df.sort_values(by="last_eta")
+
+    file_name = "Portale impianti HP.csv"
+    df.to_csv("Portale impianti HP.csv", index=False)
+
+    ftp = FTP("192.168.10.211", timeout=120)
+    ftp.login('ftpdaticentzilio', 'Sd2PqAS.We8zBK')
+
+    ftp.cwd('/dati/Database_Produzione')
+
+    file = open(file_name, "rb")
+    ftp.storbinary(f"STOR " + file_name, file)
+    ftp.close()
+
+
 while True:
+
     print("========================================================================")
     print("CICLO DI CALCOLO NUMERO  "+str(cycleN)+":")
     print("CPU:" + str(p.cpu_percent()) + " %")
     Data = main(Data, botData)
+    save_portale_impianti_hp()
     write_last_cycle()
     salva_allarmi(Data)
     Now = datetime.now()

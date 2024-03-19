@@ -12,6 +12,8 @@ def detect_t_start(period):
         t_start = datetime(now.year, 1, 1, 0, 0, 0)
     elif period == "Mensile":
         t_start = datetime(now.year, now.month, 1, 0, 0, 0)
+    elif period == "Day":
+        t_start = datetime(now.year, now.month, now.day, 0, 0, 0)
     else:
         dt = timedelta(hours=24)
         t_start = now - dt
@@ -223,12 +225,13 @@ def calcola_periodi(data_periodi, plant, ftp_folder):
         year_tl, year_stat = calcola_periodi_pv(plant, data_periodi, "Annuale")
         month_tl, month_stat = calcola_periodi_pv(plant, data_periodi, "Mensile")
         last24_tl, last24_stat = calcola_periodi_pv(plant, data_periodi, "24h")
-
+        day_tl, day_stat = calcola_periodi_pv(plant, data_periodi, "Day")
     else:
 
         year_tl, year_stat = calcola_periodi_hydro(plant, data_periodi, "Annuale")
         month_tl, month_stat = calcola_periodi_hydro(plant, data_periodi, "Mensile")
         last24_tl, last24_stat = calcola_periodi_hydro(plant, data_periodi, "24h")
+        day_tl, day_stat = calcola_periodi_hydro(plant, data_periodi, "Day")
 
     year_tl_filename = plant + "YearTL.csv"
     year_stat_filename = plant + "YearStat.csv"
@@ -241,11 +244,17 @@ def calcola_periodi(data_periodi, plant, ftp_folder):
     month_tl.to_csv(month_tl_filename, index=False)
     month_stat.to_csv(month_stat_filename, index=False)
 
-    # calcolo i dati giornalieri
+    # calcolo i dati 24 h
     last24_tl_filename = plant + "last24hTL.csv"
     last24_stat_filename = plant + "last24hStat.csv"
     last24_tl.to_csv(last24_tl_filename, index=False)
     last24_stat.to_csv(last24_stat_filename, index=False)
+
+    # calcolo i dati giornalieri
+    day_tl_filename = plant + "DayTL.csv"
+    day_stat_filename = plant + "DayStat.csv"
+    day_tl.to_csv(day_tl_filename, index=False)
+    day_stat.to_csv(day_stat_filename, index=False)
 
     ftp = FTP("192.168.10.211", timeout=120)
     ftp.login('ftpdaticentzilio', 'Sd2PqAS.We8zBK')
@@ -265,3 +274,8 @@ def calcola_periodi(data_periodi, plant, ftp_folder):
     ftp.storbinary(f"STOR " + last24_tl_filename, file)
     file = open(last24_stat_filename, "rb")
     ftp.storbinary(f"STOR " + last24_stat_filename, file)
+
+    file = open(day_tl_filename, "rb")
+    ftp.storbinary(f"STOR " + day_tl_filename, file)
+    file = open(day_stat_filename, "rb")
+    ftp.storbinary(f"STOR " + day_stat_filename, file)
