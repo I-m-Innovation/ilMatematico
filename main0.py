@@ -10,7 +10,6 @@ from scan import scan
 from colorama import Fore, Style
 from num2string_001 import convertNumber
 from alertSystem import send_resume
-import numpy as np
 
 p = psutil.Process(os.getpid())
 
@@ -87,7 +86,7 @@ def salva_allarmi(data):
 
 
 TGmode = "TEST"
-TGmode = "RUN"
+# TGmode = "RUN"
 
 if TGmode == "TEST":
     print("Funzionamento in modalità TEST!")
@@ -146,40 +145,36 @@ def send_last24_resa(mode):
 
     # ---TF--- #
     filename = "TFlast24hStat.csv"
-    df = pd.read_csv(filename)
-    energy_tf, dummy = convertNumber(df["Energy"][0], "Energy", "HTML", "TF")
+    df_tf = pd.read_csv(filename)
+    energy_tf = df_tf["Energy"][0]
 
     # ---ST--- #
     filename = "STlast24hStat.csv"
-    df = pd.read_csv(filename)
-    energy_st, dummy = convertNumber(df["Energy"][0], "Energy", "HTML", "ST")
+    df_st = pd.read_csv(filename)
+    energy_st = df_st["Energy"][0]
 
     # ---PAR--- #
     filename = "PARlast24hStat.csv"
-    df = pd.read_csv(filename)
-    energy_par, dummy = convertNumber(df["Energy"][0], "Energy", "HTML", "PAR")
+    df_par = pd.read_csv(filename)
+    energy_par = df_par["Energy"][0]
 
     # ---PG--- #
     filename = "PGlast24hStat.csv"
-    df = pd.read_csv(filename)
-    energy_pg, dummy = convertNumber(df["Energy"][0], "Energy", "HTML", "PG")
+    df_pg = pd.read_csv(filename)
+    energy_pg = df_pg["Energy"][0]
 
-    # ---SCN--- #
-    filename = "SCNlast24hStat.csv"
-    df = pd.read_csv(filename)
-    energy_scn, dummy = convertNumber(df["Energy"][0], "Energy", "HTML", "SCN")
+    rating_dict = {"Nome": ["Torrino Foresta", "San Teodoro", "Partitore", "Ponte Giurino"],
+                   "Energia": [energy_tf, energy_st, energy_par, energy_pg]}
+    df = pd.DataFrame(rating_dict)
+    df = df.sort_values(by="Energia", ascending=False, ignore_index=True)
 
-    # ---RUB--- #
-    filename = "RUBlast24hStat.csv"
-    df = pd.read_csv(filename)
-    if np.isnan(df["Energy"][0]):
-        energy_rub = "?"
-    else:
-        energy_rub, dummy = convertNumber(df["Energy"][0], "Energy", "HTML", "RUB")
+    energy0, dummy = convertNumber(df["Energia"][0], "Energy", "HTML", "TF")
+    energy1, dummy = convertNumber(df["Energia"][1], "Energy", "HTML", "ST")
+    energy2, dummy = convertNumber(df["Energia"][2], "Energy", "HTML", "PAR")
+    energy3, dummy = convertNumber(df["Energia"][3], "Energy", "HTML", "PG")
 
-    text = ("*PRODUZIONE DELLE ULTIME 24 ORE:\nTorrino Foresta*: " + energy_tf + "\n*San Teodoro*: " + energy_st +
-            "\n*Partitore*: " + energy_par + "\n*Ponte Giurino*; " + energy_pg + "\n*SCN Pilota*: " + energy_scn +
-            "\n*Rubino*: " + energy_rub)
+    text = ("*PRODUZIONE DELLE ULTIME 24 ORE*:\n1. *"+df["Nome"][0] + "*: " + energy0 + "\n2. *"+df["Nome"][1] + "*: " +
+            energy1+"\n3. *"+df["Nome"][2]+"*: "+energy2+"\n4. *"+df["Nome"][3]+"*: "+energy3)
 
     send_resume(text, mode)
 
