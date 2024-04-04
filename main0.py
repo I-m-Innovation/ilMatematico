@@ -33,6 +33,7 @@ def main(main_data, bot_data):
 
     data_new = {"TF": tf_data_new, "ST": st_data_new, "PG": pg_data_new, "PAR": par_data_new, "SA3": sa3_data_new,
                 "CST": cst_data_new}
+
     print("Scansione degli impianti terminata.")
 
     return data_new
@@ -86,7 +87,7 @@ def salva_allarmi(data):
 
 
 TGmode = "TEST"
-#TGmode = "RUN"
+TGmode = "RUN"
 
 if TGmode == "TEST":
     print("Funzionamento in modalità TEST!")
@@ -201,7 +202,7 @@ def save_portale_impianti_hp():
     st_eta = st_data["Eta"][0]
     par_eta = par_data["Eta"][0]
     tf_eta = tf_data["Eta"][0]
-    pg_eta =pg_data["Eta"][0]
+    pg_eta = pg_data["Eta"][0]
 
     st_day = pd.read_csv("STDayStat.csv")
     par_day = pd.read_csv("PARDayStat.csv")
