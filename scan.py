@@ -19,6 +19,9 @@ def main(plant, data_in, tg_mode):
         database = scaricaDati(plant, token, data_in)
         data_in["DB"] = database
 
+    if plant == "ZG":
+        database = {"DB": database, "TMY": data_in["TMY"]}
+
     # controllo se l'impianto funziona e in caso mando l'allarme
     new_state = checkProduction(plant, token, data_in)
 
@@ -60,6 +63,8 @@ def scan(plant, data, bot_data):
         plant_name = "Torrino Foresta"
     elif plant == "SA3":
         plant_name = "SA3"
+    elif plant == "ZG":
+        plant_name = "ZG"
     else:
         plant_name = "IMPIANTO IGNOTO"
 

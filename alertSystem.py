@@ -106,9 +106,9 @@ def controlla_fotovoltaico(dati_ist, plant, old_state, last_irr):
         last_timestamp = np.datetime64(last_timestamp, 'm')
 
     elif plant == "DI" or plant == "ZG":
-        last_power = dati_ist["lastP"]
-        last_timestamp = dati_ist["lastT"]
-        last_timestamp = np.datetime64(last_timestamp, 'm')
+        last_power = dati_ist["last_P_PV"][0]
+        last_timestamp = dati_ist["last_t"]
+        last_timestamp = np.datetime64(last_timestamp[0], 'm')
         
     else:
         last_power = dati_ist["P"]

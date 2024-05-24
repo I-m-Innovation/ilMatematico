@@ -100,12 +100,19 @@ def salva_ultimo_timestamp(data, plant):
     dati_impianti = pd.read_excel("lista_impianti.xlsx")
 
     last_power = data["P"].iloc[-1]
-    last_var2 = data["Q"].iloc[-1]
-    last_var3 = data["Bar"].iloc[-1]
 
     rho = 1000
     g = 9.81
-    last_eta = 1000 * last_power / (rho * g * last_var2 * last_var3 * 10.1974)
+
+    if plant != "ZG":
+        last_var2 = data["Q"].iloc[-1]
+        last_var3 = data["Bar"].iloc[-1]
+
+
+        last_eta = 1000 * last_power / (rho * g * last_var2 * last_var3 * 10.1974)
+    else:
+        last_var2 = data["I"].iloc[-1]
+        last_var3 = data["TMod"].iloc[-1]
 
     if plant == "SA3":
         eta_expected, eta_min_expected, eta_max_expected = 0, 0, 0
@@ -118,6 +125,14 @@ def salva_ultimo_timestamp(data, plant):
         dev_eta_st = eta_aspettato_st - eta_minus_st
         dev_eta_par = eta_aspettato_par - eta_minus_par
         eta_dev = np.sqrt((70 * dev_eta_st) ** 2 + (25 * dev_eta_par) ** 2) / 95
+
+    elif plant == "ZG":
+        eta_aspettato_st, eta_minus_st, eta_plus_st = float('NaN'), float('NaN'), float('NaN')
+        eta_aspettato_par, eta_minus_par, eta_plus_par = float('NaN'), float('NaN'), float('NaN')
+        eta_expected = float('NaN')
+        dev_eta_st = float('NaN')
+        dev_eta_par = float('NaN')
+        eta_dev = float('NaN')
 
     else:
         eta_expected, eta_min_expected, eta_max_expected = expected_eta(last_var2, plant, last_var3)
@@ -138,12 +153,22 @@ def salva_ultimo_timestamp(data, plant):
     var3_media = dati_impianto["Var3_media"][0]
     var3_dev = dati_impianto["Var3_dev"][0]
 
-    dati_gauge = {
-        "Power": {"last_value": last_power, "MaxScala": pn, "Media": power_expected, "Dev": power_dev},
-        "Var2": {"last_value": last_var2, "MaxScala": var2_max, "Media": var2_media, "Dev": var2_dev},
-        "Var3": {"last_value": last_var3, "MaxScala": var3_max, "Media": var3_media, "Dev": var3_dev},
-        "Eta": {"last_value": last_eta, "MaxScala": 100, "Media": eta_expected, "Dev": eta_dev}
-    }
+    if plant != "ZG":
+
+        dati_gauge = {
+            "Power": {"last_value": last_power, "MaxScala": pn, "Media": power_expected, "Dev": power_dev},
+            "Var2": {"last_value": last_var2, "MaxScala": var2_max, "Media": var2_media, "Dev": var2_dev},
+            "Var3": {"last_value": last_var3, "MaxScala": var3_max, "Media": var3_media, "Dev": var3_dev},
+            "Eta": {"last_value": last_eta, "MaxScala": 100, "Media": eta_expected, "Dev": eta_dev}
+        }
+    else:
+        dati_gauge = {
+            "Power": {"last_value": last_power, "MaxScala": pn, "Media": power_expected, "Dev": power_dev},
+            "Var2": {"last_value": last_var2, "MaxScala": var2_max, "Media": var2_media, "Dev": var2_dev},
+            "Var3": {"last_value": last_var3, "MaxScala": var3_max, "Media": var3_media, "Dev": var3_dev},
+            "Eta": {"last_value": float('NaN'), "MaxScala": 100, "Media": float('NaN'), "Dev": float('NaN')}
+
+        }
 
     last_ts_filename = plant+"_dati_gauge.csv"
     pd.DataFrame.from_dict(dati_gauge).to_csv(last_ts_filename)
@@ -254,10 +279,9 @@ def calcola_aggregati_hydro(plant, data):
 
 def calcola_aggregati_pv(plant, data):
 
-    t = data["t"]
+    t = data["DB"]["t"]
     t = pd.to_datetime(t)
-    irr = data["I"]
-    temp_mod = data["TMod"]
+
     power_1 = []
     power_2 = []
 
@@ -270,8 +294,17 @@ def calcola_aggregati_pv(plant, data):
         pn = 926.64
 
         ftp_folder = '/dati/SCN'
+        temp_mod = data["TMod"]
+        irr = data["I"]
+    elif plant == "ZG":
 
+        power = data["DB"]["PAC_PV"]
+        pn = 40
+        ftp_folder = '/dati/Zilio_Roof/Zilio Group'
+        irr = data["TMY"]["Irr"]
+        temp_mod = data["TMY"]["T_Mod"]
     else:
+        irr = data["I"]
 
         power = data["P"]
 
@@ -284,6 +317,10 @@ def calcola_aggregati_pv(plant, data):
     if plant == "SCN":
         data_periodi = {"t": t, "I": irr, "P1": power_1, "P2": power_2, "TMod": temp_mod, "eta": eta, "P": power,
                         "Tariffa": data["Tariffa"], "PN": data["PN"]}
+
+    elif plant == "ZG":
+        data_periodi = {"t": t, "I": irr, "TMod": temp_mod, "eta": eta, "P": power, "Tariffa": 0,
+                        "PN": pn}
     else:
         data_periodi = {"t": t, "I": irr, "TMod": temp_mod, "eta": eta, "P": power, "Tariffa": data["Tariffa"],
                         "PN": data["PN"]}
@@ -295,7 +332,7 @@ def calcola_aggregati_pv(plant, data):
 
 def calcola_aggregati(plant, data):
 
-    if plant == "SCN" or plant == "RUB":
+    if plant == "SCN" or plant == "RUB" or plant == "ZG":
         calcola_aggregati_pv(plant, data)
 
     else:

@@ -17,11 +17,13 @@ p = psutil.Process(os.getpid())
 def main(main_data, bot_data):
 
     print("Scansione degli impianti iniziata.")
+    sa3_data_new = scan("SA3", main_data["SA3"], bot_data)
+    # zg_data_new = scan("ZG", main_data["ZG"], bot_data)
+    zg_data_new = {"Plant state": "O"}
     par_data_new = scan("PAR", main_data["PAR"], bot_data)
     st_data_new = scan("ST", main_data["ST"], bot_data)
     plant_data = main_data["CST"]
     # SCNDataNew = scan("SCN", MainData["SCN"], bot_data)
-    sa3_data_new = scan("SA3", main_data["SA3"], bot_data)
     # RUBDataNew = scan("RUB", MainData["RUB"], bot_data)
 
     plant_data["ST"] = st_data_new
@@ -31,7 +33,7 @@ def main(main_data, bot_data):
     pg_data_new = scan("PG", main_data["PG"], bot_data)
 
     data_new = {"TF": tf_data_new, "ST": st_data_new, "PG": pg_data_new, "PAR": par_data_new, "SA3": sa3_data_new,
-                "CST": cst_data_new}
+                "CST": cst_data_new, "ZG": zg_data_new}
 
     print("Scansione degli impianti terminata.")
 
@@ -66,6 +68,7 @@ def salva_allarmi(data):
     stato_allarmi = {
         "ST": data["ST"]["Plant state"], "PG": data["PG"]["Plant state"], "PAR": data["PAR"]["Plant state"],
         "TF": data["TF"]["Plant state"], "SA3": data["SA3"]["Plant state"], "CST": data["CST"]["Plant state"],
+        "ZG": data["ZG"]["Plant state"]
     }
 
     with open("AlarmStatesBeta.csv", 'w') as csvfile:
@@ -86,7 +89,7 @@ def salva_allarmi(data):
 
 
 TGmode = "TEST"
-TGmode = "RUN"
+# TGmode = "RUN"
 
 if TGmode == "TEST":
     print("Funzionamento in modalità TEST!")
@@ -95,6 +98,7 @@ else:
 
 print("Inizializzazione del sistema.")
 # inizializzo lo stato delle centrali in "O" in modo che vengano rinnovati tutti gli allarmi vecchi
+ZGState = "O"
 STState = "O"
 PGState = "O"
 SCNState = "O"
@@ -104,30 +108,29 @@ RUBState = "O"
 PARState = "O"
 TFState = "O"
 SA3State = "O"
+ZGState = "O"
 CSTSTate = "OK"
 
 token = "6007635672:AAF_kA2nV4mrscssVRHW0Fgzsx0DjeZQIHU"
 bot = telebot.TeleBot(token)
 
 print("Caricamento dei dati statici.")
-TMYSCN = pd.read_excel("Database impianti/SCN Pilota/TMY SCN.xlsx")
-TMYRUB = pd.read_excel("Database impianti/Rubino/TMY RUBINO.xlsx")
+# TMYSCN = pd.read_excel("Database impianti/SCN Pilota/TMY SCN.xlsx")
+# TMYRUB = pd.read_excel("Database impianti/Rubino/TMY RUBINO.xlsx")
+TMYZG = pd.read_csv("Database impianti/Zilio Group/TMY_ZG.csv")
 
 # Tabelle fisse SCN
 
-SCNState = {"SCN": SCNState, "SCN1": SCN1State, "SCN2": SCN2State}
-SCNData = {"TMY": TMYSCN, "Plant state": SCNState}
 TFData = {"Plant state": TFState}
 STData = {"Plant state": STState}
 PGData = {"Plant state": PGState}
 PARData = {"Plant state": PARState}
-RUBData = {"TMY": TMYRUB, "Plant state": RUBState}
 SA3Data = {"Plant state": SA3State}
 CSTData = {"Plant state": CSTSTate}
+ZGData = {"Plant state": ZGState, "TMY":TMYZG}
 
 cycleN = 1
-Data = {"SCN": SCNData, "TF": TFData, "ST": STData, "PG": PGData, "PAR": PARData, "RUB": RUBData, "SA3": SA3Data,
-        "CST": CSTData}
+Data = {"TF": TFData, "ST": STData, "PG": PGData, "PAR": PARData, "SA3": SA3Data, "CST": CSTData, "ZG": ZGData}
 
 
 if TGmode == "TEST":
@@ -188,11 +191,13 @@ def save_portale_impianti_hp():
     par_data = pd.read_csv("PAR_dati_gauge.csv")
     tf_data = pd.read_csv("TF_dati_gauge.csv")
     pg_data = pd.read_csv("PG_dati_gauge.csv")
+    zg_data = pd.read_csv("ZG_dati_gauge.csv")
 
     st_power = st_data["Power"][0]
     par_power = par_data["Power"][0]
     tf_power = tf_data["Power"][0]
     pg_power = pg_data["Power"][0]
+    zg_power = zg_data["Power"][0]
 
     st_eta = st_data["Eta"][0]
     par_eta = par_data["Eta"][0]
@@ -203,11 +208,13 @@ def save_portale_impianti_hp():
     par_day = pd.read_csv("PARDayStat.csv")
     tf_day = pd.read_csv("TFDayStat.csv")
     pg_day = pd.read_csv("PGDayStat.csv")
+    zg_day = pd.read_csv("ZGDayStat.csv")
 
     energy_st_day = st_day["Energy"][0]
     energy_par_day = par_day["Energy"][0]
     energy_tf_day = tf_day["Energy"][0]
     energy_pg_day = pg_day["Energy"][0]
+    energy_zg_day = zg_day["Energy"][0]
 
     alarms = pd.read_csv("AlarmStatesBeta.csv")
 
@@ -215,6 +222,7 @@ def save_portale_impianti_hp():
     par_alarm = alarms["PAR"][0]
     tf_alarm = alarms["TF"][0]
     pg_alarm = alarms["PG"][0]
+    zg_alarm = alarms["ZG"][0]
 
     st_row = {"TAG": "ST", "Name": "San Teodoro", "last_power": st_power, "last_eta": st_eta, "state": st_alarm,
               "Energy": energy_st_day}
@@ -224,13 +232,16 @@ def save_portale_impianti_hp():
               "Energy": energy_tf_day}
     pg_row = {"TAG": "PG", "Name": "Ponte Giurino", "last_power": pg_power, "last_eta": pg_eta, "state": pg_alarm,
               "Energy": energy_pg_day}
+    zg_row = {"TAG": "ZG", "Name": "Ponte Giurino", "last_power": zg_power, "state": zg_alarm,
+              "Energy": energy_zg_day}
 
     st_df = pd.DataFrame(st_row, index=[0])
     par_df = pd.DataFrame(par_row, index=[0])
     tf_df = pd.DataFrame(tf_row, index=[0])
     pg_df = pd.DataFrame(pg_row, index=[0])
+    zg_df = pd.DataFrame(zg_row, index=[0])
 
-    df = pd.concat([st_df, par_df, tf_df, pg_df])
+    df = pd.concat([st_df, par_df, tf_df, pg_df, zg_df])
 
     df = df.sort_values(by="last_eta")
 

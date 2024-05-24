@@ -103,9 +103,8 @@ def calcola_periodi_hydro(plant, data, period):
     return tl_df, stat_df
 
 
-def calcola_periodi_pv(data, period, plant_tag):
+def calcola_periodi_pv(plant_tag, data, period):
 
-    tariffa = data["Tariffa"][0]
 
     t = data["t"]
     irr = data["I"]
@@ -113,8 +112,13 @@ def calcola_periodi_pv(data, period, plant_tag):
         power1 = data["P1"]
         power2 = data["P2"]
         power = power1 + power2
+        tariffa = data["Tariffa"][0]
+    elif plant_tag == "ZG":
+        power = data["P"]
+        tariffa = data["Tariffa"]
     else:
         power = data["P"]
+        tariffa = data["Tariffa"][0]
 
     pn = data["PN"]
     temp_mod = data["TMod"]
@@ -193,7 +197,7 @@ def calcola_periodi_pv(data, period, plant_tag):
         else:
             av = float("nan")
 
-    eta_mean = energy_sel / energy_irr_sel / pn[0] * 1000
+    eta_mean = energy_sel / energy_irr_sel / pn * 1000
     eta_dev = np.std(eta_sel)
 
     ftv_sel = energy_sel * tariffa
@@ -221,11 +225,13 @@ def calcola_periodi_pv(data, period, plant_tag):
 
 def calcola_periodi(data_periodi, plant, ftp_folder):
 
-    if plant == "RUB" or plant == "SCN":
+    if plant == "RUB" or plant == "SCN" or plant == "ZG":
+
         year_tl, year_stat = calcola_periodi_pv(plant, data_periodi, "Annuale")
         month_tl, month_stat = calcola_periodi_pv(plant, data_periodi, "Mensile")
         last24_tl, last24_stat = calcola_periodi_pv(plant, data_periodi, "24h")
         day_tl, day_stat = calcola_periodi_pv(plant, data_periodi, "Day")
+
     else:
 
         year_tl, year_stat = calcola_periodi_hydro(plant, data_periodi, "Annuale")

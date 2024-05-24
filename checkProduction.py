@@ -98,7 +98,6 @@ def checkSTProduction(PlantData):
 
     return STNewState
 
-
 def checkRUBProduction(token, PlantData):
     # leggo gli ultimi dati da Higeco
     Data = call2lastValue(token, "RUB")
@@ -120,6 +119,39 @@ def checkRUBProduction(token, PlantData):
     print("- Controllo dello stato della centrale...")
     try:
         NewState = controlla_fotovoltaico(Data, "RUB", PlantData["Plant state"], lastI)
+    except Exception as err:
+        print(err)
+        NewState = "U"
+
+    return NewState
+    # esco dalla funzione lo stato dell'impianto
+
+
+def checkZGProduction(PlantData):
+    # leggo gli ultimi dati da Higeco
+    Data = {
+        "last_t": PlantData["DB"]["t"].iloc[-1], "last_P_PV": PlantData["DB"]["PAC_PV"].iloc[-1],
+        "last_P_BESS": PlantData["DB"]["P_BESS"].iloc[-1], "last_P_Grid": PlantData["DB"]["P_Grid"].iloc[-1],
+        "last_Soc": PlantData["DB"]["Soc"].iloc[-1]
+    }
+    last_t = pd.to_datetime(Data["last_t"], format="%Y-%m-%d %H:%M:%S")
+
+    last_t_minus = datetime(2000, last_t.month, last_t.day, last_t.hour, 0,0)
+    last_t_plus = last_t_minus + timedelta(hours=1)
+    TMY = PlantData["TMY"]
+    tTMY = pd.to_datetime(TMY["t"], format="%Y-%m-%d %H:%M:%S")
+    ITMY = TMY["Irr"]
+
+    TMY_minus = ITMY[tTMY == last_t_minus].iloc[0]
+    TMY_plus = ITMY[tTMY == last_t_plus].iloc[0]
+
+    lastI = np.mean([TMY_minus, TMY_plus])
+
+    Data = pd.DataFrame(Data, index=[0])
+
+    print("- Controllo dello stato della centrale...")
+    try:
+        NewState = controlla_fotovoltaico(Data, "ZG", PlantData["Plant state"], lastI)
     except Exception as err:
         print(err)
         NewState = "U"
@@ -177,6 +209,8 @@ def checkProduction(Plant, token, Data):
         NewState = checkTFProduction(Data)
     elif Plant == "SA3":
         NewState = checkSA3Production(Data)
+    elif Plant == "ZG":
+        NewState = checkZGProduction(Data)
     else:
         NewState = "U"
 

@@ -7,6 +7,14 @@ import pytz
 from dateutil import tz
 import os
 import shutil
+from leo_dataQuery import login_LEO, get_leo_data
+
+
+def ScaricaDatiZG():
+    log_data = login_LEO()
+    data = get_leo_data(log_data["token"])
+
+    return data
 
 
 def ScaricaDatiSA3():
@@ -53,34 +61,41 @@ def ScaricaDatiSA3():
         col = list(dfDB.columns)
 
         # Selezione delle variabili
+        tToStore = df["LocalCol"]
+        tToStore = pd.to_datetime(tToStore, format='mixed')
+        tToStore.name = col[0]
+        tTemp = tToStore
+        tToStore = tToStore[tToStore > last_t_stored]
 
         QToStore = df["Durchfluss"]
         QToStore = pd.Series(QToStore).str.replace(',', '.')
         QToStore[QToStore == "1.#QNAN"] = float("nan")
         QToStore = QToStore.astype(float)
         QToStore.name = col[1]
+        QToStore = QToStore[tTemp > last_t_stored]
 
         BarToStore = df["Druck Eingang"]
         BarToStore = pd.Series(BarToStore).str.replace(',', '.')
         BarToStore[BarToStore == "1.#QNAN"] = float("nan")
         BarToStore = BarToStore.astype(float)
         BarToStore.name = col[2]
+        BarToStore = BarToStore[tTemp > last_t_stored]
 
         PToStore = df["Leistung"]
         PToStore = pd.Series(PToStore).str.replace(',', '.')
         PToStore[PToStore == "1.#QNAN"] = float("nan")
         PToStore = PToStore.astype(float)
         PToStore.name = col[3]
+        PToStore = PToStore[tTemp > last_t_stored]
 
         CosPhiToStore = df["CosPhi"]
         CosPhiToStore = pd.Series(CosPhiToStore).str.replace(',', '.')
         CosPhiToStore[CosPhiToStore == "1.#QNAN"] = float("nan")
         CosPhiToStore = CosPhiToStore.astype(float)
         CosPhiToStore.name = col[4]
+        CosPhiToStore = CosPhiToStore[tTemp > last_t_stored]
 
-        tToStore = df["LocalCol"]
-        tToStore = pd.to_datetime(tToStore, format='mixed')
-        tToStore.name = col[0]
+
 
         dfToConcat = pd.concat([tToStore.reset_index(drop=True), QToStore.reset_index(drop=True),
                                 BarToStore.reset_index(drop=True), PToStore.reset_index(drop=True),
@@ -725,6 +740,8 @@ def scaricaDati(Plant, token, Data):
         newDB = ScaricaDatiCST(Data)
     elif Plant == "SA3":
         newDB = ScaricaDatiSA3()
+    elif Plant == "ZG":
+        newDB = ScaricaDatiZG()
     else:
         newDB = []
 
