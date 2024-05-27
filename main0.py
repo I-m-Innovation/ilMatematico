@@ -232,7 +232,7 @@ def save_portale_impianti_hp():
               "Energy": energy_tf_day}
     pg_row = {"TAG": "PG", "Name": "Ponte Giurino", "last_power": pg_power, "last_eta": pg_eta, "state": pg_alarm,
               "Energy": energy_pg_day}
-    zg_row = {"TAG": "ZG", "Name": "Ponte Giurino", "last_power": zg_power, "state": zg_alarm,
+    zg_row = {"TAG": "ZG", "Name": "Zilio Group", "last_power": zg_power, "state": zg_alarm,
               "Energy": energy_zg_day}
 
     st_df = pd.DataFrame(st_row, index=[0])
