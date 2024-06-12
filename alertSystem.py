@@ -117,7 +117,7 @@ def controlla_fotovoltaico(dati_ist, plant, old_state, last_irr):
 
     dt = now - last_timestamp
 
-    if dt > 30 or last_power == [] or last_irr == "Not Found":
+    if dt > 35 or last_power == [] or last_irr == "Not Found":
 
         if old_state == "W":
             new_state = "A"
