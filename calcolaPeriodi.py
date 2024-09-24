@@ -53,6 +53,10 @@ def calcola_periodi_hydro(plant, data, period):
     power_mean = np.mean(power_sel)
     power_dev = np.std(power_sel)
 
+    if np.isnan(power_mean):
+        power_mean = 0
+        power_dev = 0
+
     power_st_sel = []
     power_par_sel = []
 
