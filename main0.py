@@ -15,7 +15,7 @@ p = psutil.Process(os.getpid())
 
 
 def main(main_data, bot_data):
-
+    print("ok")
     print("Scansione degli impianti iniziata.")
     sa3_data_new = scan("SA3", main_data["SA3"], bot_data)
     zg_data_new = scan("ZG", main_data["ZG"], bot_data)
