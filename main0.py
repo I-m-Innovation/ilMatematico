@@ -18,8 +18,8 @@ def main(main_data, bot_data):
 
     print("Scansione degli impianti iniziata.")
     sa3_data_new = scan("SA3", main_data["SA3"], bot_data)
-    # zg_data_new = scan("ZG", main_data["ZG"], bot_data)
-    zg_data_new = {"Plant state": "O"}
+    zg_data_new = scan("ZG", main_data["ZG"], bot_data)
+    # zg_data_new = {"Plant state": "O"}
     par_data_new = scan("PAR", main_data["PAR"], bot_data)
     st_data_new = scan("ST", main_data["ST"], bot_data)
     plant_data = main_data["CST"]
@@ -89,7 +89,7 @@ def salva_allarmi(data):
 
 
 TGmode = "TEST"
-TGmode = "RUN"
+# TGmode = "RUN"
 
 if TGmode == "TEST":
     print("Funzionamento in modalità TEST!")
