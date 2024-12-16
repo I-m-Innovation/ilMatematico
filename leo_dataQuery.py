@@ -41,13 +41,13 @@ def get_leo_data(token):
 
 		# qua devo inserire come tstart l'ultimo + dt
 		t_start = last_t_stored + timedelta(minutes=5)
-		t_end = t_start + timedelta(days=2)
+		t_end = t_start + timedelta(days=1)
 		t_start_epoch = int(time.mktime(t_start.timetuple()))
 		t_end_epoch = int(time.mktime(t_end.timetuple()))
 
 		df = pd.DataFrame()
 
-		while t_end <= Now+timedelta(days=1):
+		while t_end <= Now+timedelta(days=2):
 			# t_end = int(time.mktime(Now.timetuple()))
 			print(t_start, t_end)
 
