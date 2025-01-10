@@ -42,5 +42,3 @@ PLC1_AI_LT_STRAMAZZO = pd.Series(['ND']*len(PLC1_AI_FT_PORT_IST))
 
 df = pd.concat([x__TimeStamp, PLC_1_AI_PT_LINEA, PLC_1_AI_PT_TURBINA, PLC_1_AI_POT_ATTIVA,PLC1_AI_FT_PORT_IST, PLC1_AI_COSPHI, PLC1_AI_LT_STRAMAZZO, Local], axis=1)
 df.to_csv("DBPG_to_insert.csv", index=False)
-
-A =2
