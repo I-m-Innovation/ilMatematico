@@ -197,7 +197,7 @@ def calcola_aggregati_hydro(plant, data):
     if plant == "ST" or plant == "PAR":
 
         t = data["timestamp"]
-        t = pd.to_datetime(t)
+        t = pd.to_datetime(t, format='mixed')
         q = data["Portata [l/s]"] / 1000
         power = data["Potenza [kW]"]
         bar = data["Pressione [bar]"]

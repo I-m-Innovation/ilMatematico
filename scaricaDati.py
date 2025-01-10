@@ -514,12 +514,17 @@ def ScaricaDatiST():
     dfDB = pd.read_csv("DBST.csv", on_bad_lines='skip', header='infer', delimiter=',')
     tDB = dfDB["timestamp"]
 
-    tDB = pd.to_datetime(tDB)
+    tDB = pd.to_datetime(tDB, format='mixed')
     # dfDB["timestamp"] = tDB
     last_t_stored = tDB.iloc[-1]
 
     Tempi = df['TimeString']
-    Tempi = pd.to_datetime(Tempi, format='%d/%m/%Y %H:%M:%S')
+    try:
+        Tempi = pd.to_datetime(Tempi, format='%d/%m/%Y %H:%M:%S')
+    except Exception as err:
+        print(err)
+        Tempi = pd.to_datetime(Tempi, format='%d/%m/%Y %H:%M')
+
 
     lastFromPLC = Tempi.iloc[-1]
 
@@ -534,7 +539,12 @@ def ScaricaDatiST():
         VariabiliToStore = dataToStore['VarName']
         ValoriToStore = dataToStore['VarValue']
         TempiToStore = dataToStore['TimeString']
-        TempiToStore = pd.to_datetime(TempiToStore, format='%d/%m/%Y %H:%M:%S')
+        try:
+            TempiToStore = pd.to_datetime(TempiToStore, format='%d/%m/%Y %H:%M:%S')
+        except Exception as err:
+            print(err)
+            TempiToStore = pd.to_datetime(TempiToStore, format='%d/%m/%Y %H:%M')
+
 
         QToStore = ValoriToStore[VariabiliToStore == "Portata_FTP"]
         QToStore = pd.Series(QToStore).str.replace(',', '.')
