@@ -38,7 +38,7 @@ def get_leo_data(token):
 	try:
 		Now = datetime.now()
 		last_t_stored = datetime.strptime(oldDB["t"].iloc[-1],"%Y-%m-%d %H:%M:%S")
-		last_t_stored = datetime(2024,1,1)
+		# last_t_stored = datetime(2024,1,1)
 		# qua devo inserire come tstart l'ultimo + dt
 		t_start = last_t_stored + timedelta(minutes=5)
 		t_end = t_start + timedelta(days=1)
