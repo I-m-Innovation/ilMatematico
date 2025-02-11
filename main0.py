@@ -90,7 +90,7 @@ def salva_allarmi(data):
     ftp.close()
 
 TGmode = "TEST"
-# TGmode = "RUN"
+TGmode = "RUN"
 
 if TGmode == "TEST":
     print("Funzionamento in modalità TEST!")
