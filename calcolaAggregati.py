@@ -107,8 +107,6 @@ def salva_ultimo_timestamp(data, plant):
     if plant != "ZG":
         last_var2 = data["Q"].iloc[-1]
         last_var3 = data["Bar"].iloc[-1]
-
-
         last_eta = 1000 * last_power / (rho * g * last_var2 * last_var3 * 10.1974)
     else:
         last_var2 = data["I"].iloc[-1]
@@ -152,6 +150,9 @@ def salva_ultimo_timestamp(data, plant):
     var3_max = dati_impianto["Var3_max"][0]
     var3_media = dati_impianto["Var3_media"][0]
     var3_dev = dati_impianto["Var3_dev"][0]
+
+    print(f"Eta medio gauge: {eta_expected}; Deviazione standard: {eta_dev}")
+    print(f"Potenza medio gauge: {power_expected}; Deviazione standard: {power_dev}")
 
     if plant != "ZG":
 

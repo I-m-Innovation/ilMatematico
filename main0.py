@@ -18,21 +18,18 @@ def main(main_data, bot_data):
     print("ok")
     print("Scansione degli impianti iniziata.")
 
+    pg_data_new = scan("PG", main_data["PG"], bot_data)
     zg_data_new = scan("ZG", main_data["ZG"], bot_data)
     tf_data_new = scan("TF", main_data["TF"], bot_data)
-
     st_data_new = scan("ST", main_data["ST"], bot_data)
     sa3_data_new = scan("SA3", main_data["SA3"], bot_data)
     # zg_data_new = {"Plant state": "O"}
     par_data_new = scan("PAR", main_data["PAR"], bot_data)
 
     plant_data = main_data["CST"]
-    # SCNDataNew = scan("SCN", MainData["SCN"], bot_data)
-    # RUBDataNew = scan("RUB", MainData["RUB"], bot_data)
     plant_data["ST"] = st_data_new
     plant_data["PAR"] = par_data_new
     cst_data_new = scan("CST", plant_data, bot_data)
-    pg_data_new = scan("PG", main_data["PG"], bot_data)
 
     data_new = {"TF": tf_data_new, "ST": st_data_new, "PG": pg_data_new, "PAR": par_data_new, "SA3": sa3_data_new,
                 "CST": cst_data_new, "ZG": zg_data_new}
@@ -260,7 +257,6 @@ def save_portale_impianti_hp():
 
 
 while True:
-
     print("========================================================================")
     print("CICLO DI CALCOLO NUMERO  "+str(cycleN)+":")
     print("CPU:" + str(p.cpu_percent()) + " %")
