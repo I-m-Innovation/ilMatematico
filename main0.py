@@ -18,9 +18,11 @@ def main(main_data, bot_data):
     print("ok")
     print("Scansione degli impianti iniziata.")
 
+    # tf_data_new = scan("TF", main_data["TF"], bot_data)
     pg_data_new = scan("PG", main_data["PG"], bot_data)
     zg_data_new = scan("ZG", main_data["ZG"], bot_data)
-    tf_data_new = scan("TF", main_data["TF"], bot_data)
+    tf_data_new = pd.DataFrame()
+    tf_data_new["Plant state"] = "O"
     st_data_new = scan("ST", main_data["ST"], bot_data)
     sa3_data_new = scan("SA3", main_data["SA3"], bot_data)
     # zg_data_new = {"Plant state": "O"}
@@ -71,7 +73,6 @@ def salva_allarmi(data):
     }
 
     with open("AlarmStatesBeta.csv", 'w') as csvfile:
-
         writer = csv.DictWriter(csvfile, stato_allarmi.keys())
         writer.writeheader()
         writer.writerow(stato_allarmi)
@@ -106,7 +107,6 @@ RUBState = "O"
 PARState = "O"
 TFState = "O"
 SA3State = "O"
-ZGState = "O"
 CSTSTate = "OK"
 
 token = "6007635672:AAF_kA2nV4mrscssVRHW0Fgzsx0DjeZQIHU"
@@ -143,7 +143,6 @@ botData = {"bot": bot, "mode": TGmode}
 
 
 def send_last24_resa(mode):
-
     # ---TF--- #
     filename = "TFlast24hStat.csv"
     df_tf = pd.read_csv(filename)

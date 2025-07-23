@@ -98,6 +98,7 @@ def checkSTProduction(PlantData):
 
     return STNewState
 
+
 def checkRUBProduction(token, PlantData):
     # leggo gli ultimi dati da Higeco
     Data = call2lastValue(token, "RUB")
@@ -136,7 +137,7 @@ def checkZGProduction(PlantData):
     }
     last_t = pd.to_datetime(Data["last_t"], format="%Y-%m-%d %H:%M:%S")
 
-    last_t_minus = datetime(2000, last_t.month, last_t.day, last_t.hour, 0,0)
+    last_t_minus = datetime(2000, last_t.month, last_t.day, last_t.hour, 0, 0)
     last_t_plus = last_t_minus + timedelta(hours=1)
     TMY = PlantData["TMY"]
     tTMY = pd.to_datetime(TMY["t"], format="%Y-%m-%d %H:%M:%S")

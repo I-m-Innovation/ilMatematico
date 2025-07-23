@@ -6,6 +6,7 @@ from alertSystem import send_telegram
 from displayState import displayState
 from scaricaDati import scaricaDati
 from calcolaAggregati import calcola_aggregati
+from backups import salva_backup
 
 
 def main(plant, data_in, tg_mode):
@@ -13,7 +14,6 @@ def main(plant, data_in, tg_mode):
     if plant == "SCN" or plant == "RUB":
         token = authenticateHigeco("SCN")
         database = scaricaDati(plant, token, [])
-
     else:
         token = []
         database = scaricaDati(plant, token, data_in)
@@ -41,6 +41,9 @@ def main(plant, data_in, tg_mode):
         displayState(new_state)
 
     calcola_aggregati(plant, database)
+
+    if plant == "TF" or plant == "PG":
+        salva_backup(plant)
 
     return data_in
 
@@ -76,7 +79,6 @@ def scan(plant, data, bot_data):
 
     sep = "------------------------------------------------------------------------"
     try:
-
         print(sep)
         now = datetime.now()
         print(str(now) + f': inizio calcolo di {Fore.YELLOW}' + plant_name + f'{Style.RESET_ALL}')
@@ -88,7 +90,6 @@ def scan(plant, data, bot_data):
         print(f'-- {Fore.GREEN}' + message + f'{Style.RESET_ALL}')
 
     except Exception as err:
-
         message = "ERRORE IN " + plant_name + ": " + str(err)
         bot.send_message(test_id, text=message)
         print(f'-- {Fore.RED}' + message + f'{Style.RESET_ALL}')

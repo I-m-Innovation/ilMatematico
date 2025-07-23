@@ -8,6 +8,7 @@ from dateutil import tz
 import os
 import shutil
 from leo_dataQuery import login_LEO, get_leo_data
+import ftputil
 
 
 def ScaricaDatiZG():
@@ -115,82 +116,108 @@ def ScaricaDatiSA3():
 
 
 def sistemaCartellaFTP_TF(Plant):
-    if Plant == "TF":
-        DBileName = "DBTFNEW4.csv"
+    DBileName = "DBTFNEW5.csv"
 
-        # Entro nella cartella FTP
-        ftp = FTP("192.168.10.211", timeout=120)
-        ftp.login('ftpdaticentzilio', 'Sd2PqAS.We8zBK')
-        ftp.cwd('/dati/Torrino_Foresta')
+    # Entro nella cartella FTP
+    ftp = FTP("192.168.10.211", timeout=120)
+    ftp.login('ftpdaticentzilio', 'Sd2PqAS.We8zBK')
+    ftp.cwd('/dati/Torrino_Foresta')
+    gFile = open("DBTFNEW5.csv", "wb")
+    ftp.retrbinary('RETR DBTFNEW5.csv', gFile.write)
+    gFile.close()
+    DB = pd.read_csv(DBileName, on_bad_lines='skip', header='infer', delimiter=',')
+    newDB = DB
 
-        Files = ftp.nlst()
+    ftp.set_pasv(False)
 
-        for File in range(len(Files)):
+    Files = ftp.nlst()
+    new_data = False
 
-            try:
-                currFile = Files[File]
+    for File in range(len(Files)):
+        try:
+            currFile = Files[File]
 
-                if currFile[0:4] == "DATI":
-                    #   apro i file
-                    gFile = open(DBileName, "wb")
-                    ftp.retrbinary("RETR " + DBileName, gFile.write)
-                    gFile.close()
+            if currFile[0:4] == "DATI":
+                new_data = True
+                #   apro i file
 
-                    DB = pd.read_csv(DBileName, on_bad_lines='skip', header='infer', delimiter=',')
-                    gFile = open(currFile, "wb")
-                    ftp.retrbinary('RETR ' + currFile, gFile.write)
-                    gFile.close()
+                # with open(DBileName, 'wb') as f:
+                #     ftp.retrbinary(DBileName, f.write)
 
-                    newLine = pd.read_csv(currFile, on_bad_lines='skip', header='infer', delimiter=';')
-                    DataNewLine = newLine.iloc[1, :]
+                # gFile = open("DBTFNEW5.csv", "wb")
+                # ftp.retrbinary('RETR DBTFNEW5.csv', gFile.write)
+                # gFile.close()
 
-                    newTime = DataNewLine.iloc[0]
-                    test = datetime.strptime(newTime, '%d/%m/%Y %H:%M:%S')
-                    test2 = datetime(test.year, test.month, test.day, test.hour, test.minute, test.second,
-                                     tzinfo=pytz.utc)
-                    to_zone = tz.tzlocal()
-                    central = test2.astimezone(to_zone)
-                    newTimeLoc = datetime(central.year, central.month, central.day, central.hour,
-                                          central.minute, central.second)
-                    newTimeLoc = datetime.strftime(newTimeLoc, format="%Y-%m-%d %H:%M:%S")
+                with ftputil.FTPHost("192.168.10.211", "ftpdaticentzilio", "Sd2PqAS.We8zBK") as host:
+                    host.chdir("/dati/Torrino_Foresta")
+                    host.download(currFile, currFile)
 
-                    newPT_Linea = float(DataNewLine.iloc[1].replace(",", "."))
-                    newPT_Turbina = float(DataNewLine.iloc[2].replace(",", "."))
-                    newPotAtt = float(DataNewLine.iloc[3].replace(",", "."))
-                    newPort = float(DataNewLine.iloc[4].replace(",", "."))
-                    newCosPhi = float(DataNewLine.iloc[5].replace(",", "."))
-                    newLevStram = float(DataNewLine.iloc[6].replace(",", "."))
-                    newPortata1600 = float(DataNewLine.iloc[7].replace(",", "."))
-                    newPressioneUscita = float(DataNewLine.iloc[8].replace(",", "."))
-                    newLevScarico = float(DataNewLine.iloc[9].replace(",", "."))
+                # gFile = open(currFile, "wb")
+                #
+                # ftp.retrbinary('RETR ' + currFile, gFile.write)
+                # gFile.close()
+                print("Processando "+currFile)
+                newLine = pd.read_csv(currFile, on_bad_lines='skip', header='infer', delimiter=';')
+                DataNewLine = newLine.iloc[1, :]
 
-                    NewLine = pd.DataFrame({'x__TimeStamp': [newTime], 'Local': [newTimeLoc],
-                                            'PLC1_AI_PT_LINEA': [newPT_Linea],
-                                            'PLC1_AI_PT_TURBINA': [newPT_Turbina], 'PLC1_AI_POT_ATTIVA': [newPotAtt],
-                                            'PLC1_AI_FT_PORT_IST': [newPort], 'PLC1_AI_COSPHI': [newCosPhi],
-                                            'PLC1_AI_LT_STRAMAZZO': [newLevStram],
-                                            'PLC1_AI_FT_PORT_COND': [newPortata1600],
-                                            'PLC1_AI_PT_TURBINA_OUT': [newPressioneUscita],
-                                            'PLC1_AI_LT_SCAR_C': [newLevScarico]})
+                newTime = DataNewLine.iloc[0]
+                test = datetime.strptime(newTime, '%d/%m/%Y %H:%M:%S')
+                test2 = datetime(test.year, test.month, test.day, test.hour, test.minute, test.second,
+                                 tzinfo=pytz.utc)
+                to_zone = tz.tzlocal()
+                central = test2.astimezone(to_zone)
+                newTimeLoc = datetime(central.year, central.month, central.day, central.hour,
+                                      central.minute, central.second)
+                newTimeLoc = datetime.strftime(newTimeLoc, format="%Y-%m-%d %H:%M:%S")
 
-                    newDB = pd.concat([DB, NewLine], ignore_index=True)
-                    newDB.to_csv(DBileName, index=False)
+                newPT_Linea = float(DataNewLine.iloc[1].replace(",", "."))
+                newPT_Turbina = float(DataNewLine.iloc[2].replace(",", "."))
+                newPotAtt = float(DataNewLine.iloc[3].replace(",", "."))
+                newPort = float(DataNewLine.iloc[4].replace(",", "."))
+                newCosPhi = float(DataNewLine.iloc[5].replace(",", "."))
+                newLevStram = float(DataNewLine.iloc[6].replace(",", "."))
+                newPortata1600 = float(DataNewLine.iloc[7].replace(",", "."))
+                newPressioneUscita = float(DataNewLine.iloc[8].replace(",", "."))
+                newLevScarico = float(DataNewLine.iloc[9].replace(",", "."))
 
-                    #   Salvo il nuovo database
-                    File = open(DBileName, "rb")
-                    ftp.storbinary(f"STOR " + DBileName, File)
-                    ftp.delete(currFile)
+                NewLine = pd.DataFrame({'x__TimeStamp': [newTime], 'Local': [newTimeLoc],
+                                        'PLC1_AI_PT_LINEA': [newPT_Linea],
+                                        'PLC1_AI_PT_TURBINA': [newPT_Turbina], 'PLC1_AI_POT_ATTIVA': [newPotAtt],
+                                        'PLC1_AI_FT_PORT_IST': [newPort], 'PLC1_AI_COSPHI': [newCosPhi],
+                                        'PLC1_AI_LT_STRAMAZZO': [newLevStram],
+                                        'PLC1_AI_FT_PORT_COND': [newPortata1600],
+                                        'PLC1_AI_PT_TURBINA_OUT': [newPressioneUscita],
+                                        'PLC1_AI_LT_SCAR_C': [newLevScarico]})
+                newDB = pd.concat([DB, NewLine], ignore_index=True)
+                DB = newDB
 
-                    thisFolder = os.getcwd()
-                    source = thisFolder + "\\" + currFile
-                    destination = thisFolder + "\\Database impianti\\Torrino Foresta\\Dati raw\\" + currFile
-                    # destination = destFolder + currFile
-                    shutil.move(source, destination)
+                with ftputil.FTPHost('192.168.10.211', 'ftpdaticentzilio', 'Sd2PqAS.We8zBK') as ftp_host:
+                    file_to_remove = f'/dati/Torrino_Foresta/{currFile}'
+                    ftp_host.remove(file_to_remove)
+                # ftp.delete(currFile)
 
-            except Exception as err:
-                print(err)
+                thisFolder = os.getcwd()
+                source = thisFolder + "\\" + currFile
+                destination = thisFolder + "\\Database impianti\\Torrino Foresta\\Dati raw\\" + currFile
+                # destination = destFolder + currFile
+                shutil.move(source, destination)
 
-        ftp.close()
+        except Exception as err:
+            print(err)
+
+    newDB.to_csv(DBileName, index=False)
+
+    #   Salvo il nuovo database
+    # File = open(DBileName, "rb")
+    # ftp.storbinary(f"STOR {DBileName}", File)
+    #
+    # ftp.close()
+    if new_data == True:
+        with ftputil.FTPHost('192.168.10.211', 'ftpdaticentzilio', 'Sd2PqAS.We8zBK') as ftp_host:
+            source = thisFolder + "\\" + DBileName
+            local_path = source # il file sul tuo computer
+            remote_path = f'/dati/Torrino_Foresta/DBTFNEW5.csv'  # il nome con cui vuoi salvarlo sul server
+            ftp_host.upload(local_path, remote_path)
 
 
 def ScaricaDatiTF():
@@ -199,12 +226,12 @@ def ScaricaDatiTF():
     ftp = FTP("192.168.10.211", timeout=120)
     ftp.login('ftpdaticentzilio', 'Sd2PqAS.We8zBK')
     ftp.cwd('/dati/Torrino_Foresta')
-    gFile = open("DBTFNEW4.csv", "wb")
-    ftp.retrbinary('RETR DBTFNEW4.csv', gFile.write)
+    gFile = open("DBTFNEW5.csv", "wb")
+    ftp.retrbinary('RETR DBTFNEW5.csv', gFile.write)
     gFile.close()
     ftp.close()
 
-    df = pd.read_csv("DBTFNEW4.csv", on_bad_lines='skip', header='infer', delimiter=',', low_memory=False)
+    df = pd.read_csv("DBTFNEW5.csv", on_bad_lines='skip', header='infer', delimiter=',', low_memory=False)
 
     # Selezione delle variabili
     TempiString = df['Local']
@@ -258,7 +285,10 @@ def sistemaCartellaFTPPG():
             if currFile[0:4] == "DATI":
                 #   apro i file
                 gFile = open('DBPGNEW.csv', "wb")
+                # try:
                 ftp.retrbinary('RETR DBPGNEW.csv', gFile.write)
+                # except Exception as err:
+                #     print(err)
                 gFile.close()
 
                 DB = pd.read_csv("DBPGNEW.csv", on_bad_lines='skip', header='infer', delimiter=',',
@@ -312,7 +342,6 @@ def sistemaCartellaFTPPG():
 
 
 def ScaricaDatiPG():
-
     # connetto a FTP e prelievo il file
     ftp = FTP("192.168.10.211", timeout=120)
     ftp.login('ftpdaticentzilio', 'Sd2PqAS.We8zBK')
@@ -748,6 +777,7 @@ def scaricaDati(Plant, token, Data):
         sistemaCartellaFTPPG()
         newDB = ScaricaDatiPG()
     elif Plant == "TF":
+        # ScaricaDatiTF()
         sistemaCartellaFTP_TF("TF")
         newDB = ScaricaDatiTF()
     elif Plant == "CST":
