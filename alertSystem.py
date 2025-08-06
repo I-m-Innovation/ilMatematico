@@ -67,7 +67,7 @@ def controlla_centrale_tg(dati_ist, plant, old_state):
 
     dt = now - last_timestamp
 
-    if dt > dt_test or last_power == []:
+    if (dt > dt_test or last_power.size == 0):
 
         if old_state == "W":
             new_state = "A"
@@ -117,7 +117,7 @@ def controlla_fotovoltaico(dati_ist, plant, old_state, last_irr):
 
     dt = now - last_timestamp
 
-    if dt > 35 or last_power == [] or last_irr == "Not Found":
+    if dt > 35 or last_power.size == 0 or last_irr == "Not Found":
 
         if old_state == "W":
             new_state = "A"
