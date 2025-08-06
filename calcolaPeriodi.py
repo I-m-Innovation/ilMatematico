@@ -230,14 +230,12 @@ def calcola_periodi_pv(plant_tag, data, period):
 def calcola_periodi(data_periodi, plant, ftp_folder):
 
     if plant == "RUB" or plant == "SCN" or plant == "ZG":
-
         year_tl, year_stat = calcola_periodi_pv(plant, data_periodi, "Annuale")
         month_tl, month_stat = calcola_periodi_pv(plant, data_periodi, "Mensile")
         last24_tl, last24_stat = calcola_periodi_pv(plant, data_periodi, "24h")
         day_tl, day_stat = calcola_periodi_pv(plant, data_periodi, "Day")
 
     else:
-
         year_tl, year_stat = calcola_periodi_hydro(plant, data_periodi, "Annuale")
         month_tl, month_stat = calcola_periodi_hydro(plant, data_periodi, "Mensile")
         last24_tl, last24_stat = calcola_periodi_hydro(plant, data_periodi, "24h")

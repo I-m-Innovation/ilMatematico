@@ -130,7 +130,7 @@ def controlla_fotovoltaico(dati_ist, plant, old_state, last_irr):
 
     else:
 
-        if last_irr > 50:
+        if last_irr > 200:
             if last_power == 0:
                 new_state = "A"
 

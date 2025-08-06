@@ -16,8 +16,11 @@ def main(plant, data_in, tg_mode):
         database = scaricaDati(plant, token, [])
     else:
         token = []
-        database = scaricaDati(plant, token, data_in)
-        data_in["DB"] = database
+        try:
+            database = scaricaDati(plant, token, data_in)
+            data_in["DB"] = database
+        except Exception as e:
+            print(e)
 
     if plant == "ZG":
         database = {"DB": database, "TMY": data_in["TMY"]}
@@ -90,9 +93,12 @@ def scan(plant, data, bot_data):
         print(f'-- {Fore.GREEN}' + message + f'{Style.RESET_ALL}')
 
     except Exception as err:
-        message = "ERRORE IN " + plant_name + ": " + str(err)
-        bot.send_message(test_id, text=message)
-        print(f'-- {Fore.RED}' + message + f'{Style.RESET_ALL}')
+        str_err = str(err)
+        
+        if str_err[0:55] != 'boolean index did not match indexed array along axis 0;':
+            message = "ERRORE IN " + plant_name + ": " + str(err)
+            bot.send_message(test_id, text=message)
+            print(f'-- {Fore.RED}' + message + f'{Style.RESET_ALL}')
         data_new = data
 
     return data_new
