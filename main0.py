@@ -10,6 +10,7 @@ from scan import scan
 from colorama import Fore, Style
 from num2string_001 import convertNumber
 from alertSystem import send_resume
+from pun_calculator import aggiorna_tabelle_pun
 
 p = psutil.Process(os.getpid())
 
@@ -89,7 +90,7 @@ def salva_allarmi(data):
     ftp.close()
 
 TGmode = "TEST"
-TGmode = "RUN"
+# TGmode = "RUN"
 
 if TGmode == "TEST":
     print("Funzionamento in modalità TEST!")
@@ -260,10 +261,12 @@ while True:
     print("========================================================================")
     print("CICLO DI CALCOLO NUMERO  "+str(cycleN)+":")
     print("CPU:" + str(p.cpu_percent()) + " %")
+    aggiorna_tabelle_pun()
     Data = main(Data, botData)
     save_portale_impianti_hp()
     write_last_cycle()
     salva_allarmi(Data)
+    
     Now = datetime.now()
 
     if Now.hour >= 21 and isSent == 0:
@@ -276,5 +279,5 @@ while True:
     print("========================================================================")
 
     time.sleep(60 * dt)
-    cycleN = cycleN + 1
+    cycleN += 1
     os.system('cls||clear')
