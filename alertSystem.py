@@ -62,8 +62,8 @@ def controlla_centrale_tg(dati_ist, plant, old_state):
             last_timestamp = []
             last_power = []
 
-    if plant == "TF":
-        dt_test = 60
+    if plant == "TF" or plant == "PG":
+        dt_test = 40
 
     dt = now - last_timestamp
 
