@@ -51,7 +51,7 @@ def scarica_file(conn, t_on):
 
     # salva in SQLite (⚠️ replace sovrascrive: se vuoi append basta cambiare)
     conn_sql = sqlite3.connect(r"C:\Users\Sviluppo_Software_ZG\Desktop\PortaleMonitoraggio\Produzione\db.sqlite3")
-    df_new.to_sql("Prezzi energia", conn_sql, if_exists="replace", index=False)
+    df_new.to_sql("Prezzi energia", conn_sql, if_exists="append", index=False)
     conn_sql.close()
     conn.close()
 
@@ -109,7 +109,7 @@ def scarica_file_00(conn, t_on):
     df_new["NORD"] = df_new["NORD"].str.replace(",",".").astype(float)
     df_new["Data"] = date.values
     conn_sql = sqlite3.connect(r"C:\Users\Sviluppo_Software_ZG\Desktop\PortaleMonitoraggio\Produzione\db.sqlite3")
-    df_new.to_sql("Prezzi energia", conn_sql, if_exists="replace", index=False)
+    df_new.to_sql("Prezzi energia", conn_sql, if_exists="append", index=False)
     conn_sql.close()
     conn.close()
 
@@ -146,7 +146,7 @@ def calcola_medie_mensili():
     })
 
     conn_sql = sqlite3.connect(r"C:\Users\Sviluppo_Software_ZG\Desktop\PortaleMonitoraggio\Produzione\db.sqlite3")
-    df.to_sql("Prezzi medi mensili", conn_sql, if_exists="replace", index=False)
+    df.to_sql("Prezzi medi mensili", conn_sql, if_exists="append", index=False)
     conn_sql.close()
 
 def read_last_file():

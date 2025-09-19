@@ -90,7 +90,7 @@ def salva_allarmi(data):
     ftp.close()
 
 TGmode = "TEST"
-# TGmode = "RUN"
+TGmode = "RUN"
 
 if TGmode == "TEST":
     print("Funzionamento in modalità TEST!")
@@ -261,11 +261,12 @@ while True:
     print("========================================================================")
     print("CICLO DI CALCOLO NUMERO  "+str(cycleN)+":")
     print("CPU:" + str(p.cpu_percent()) + " %")
+    
     Data = main(Data, botData)
     save_portale_impianti_hp()
     write_last_cycle()
     salva_allarmi(Data)
-    aggiorna_tabelle_pun()
+    aggiorna_tabelle_pun()    
     
     Now = datetime.now()
 
