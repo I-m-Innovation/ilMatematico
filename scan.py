@@ -10,7 +10,6 @@ from backups import salva_backup
 
 
 def main(plant, data_in, tg_mode):
-
     if plant == "SCN" or plant == "RUB":
         token = authenticateHigeco("SCN")
         database = scaricaDati(plant, token, [])
@@ -52,7 +51,6 @@ def main(plant, data_in, tg_mode):
 
 
 def scan(plant, data, bot_data):
-
     if plant == "SCN":
         plant_name = "SCN Pilota"
     elif plant == "RUB":
@@ -71,6 +69,8 @@ def scan(plant, data, bot_data):
         plant_name = "SA3"
     elif plant == "ZG":
         plant_name = "ZG"
+    elif plant == "CAN":
+        plant_name = "Canaletta"
     else:
         plant_name = "IMPIANTO IGNOTO"
 

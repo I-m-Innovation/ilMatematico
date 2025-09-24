@@ -9,7 +9,9 @@ import os
 import shutil
 from leo_dataQuery import login_LEO, get_leo_data
 import ftputil
-
+# from azure.eventhub import EventHubConsumerClient
+# from AzureIoTtools.canaletta_utilities import init_db, on_event
+import sqlite3
 
 def ScaricaDatiZG():
     log_data = login_LEO()
@@ -528,7 +530,6 @@ def ScaricaDatiPAR():
 
 
 def ScaricaDatiST():
-
     # connetto a FTP e prelievo il file
     ftp = FTP("192.168.10.211", timeout=120)
     ftp.login('ftpdaticentzilio', 'Sd2PqAS.We8zBK')
@@ -577,7 +578,6 @@ def ScaricaDatiST():
         except Exception as err:
             print(err)
             TempiToStore = pd.to_datetime(TempiToStore, format='%d/%m/%Y %H:%M')
-
 
         QToStore = ValoriToStore[VariabiliToStore == "Portata_FTP"]
         QToStore = pd.Series(QToStore).str.replace(',', '.')
@@ -691,7 +691,6 @@ def scaricaDatiRUB(token):
 
 
 def scaricaDatiSCN(token):
-
     # scarico il DB dalla FTP
 
     ftp = FTP("192.168.10.211", timeout=120)
@@ -757,6 +756,34 @@ def scaricaDatiSCN(token):
 
     return newDB
 
+def ScaricaDatiCAN():
+    # Percorso al file del database
+    db_path = r"AzureIotTools/messages_canaletta.db"
+
+    # Connessione al database
+    conn = sqlite3.connect(db_path)
+
+    # Leggiamo la tabella measurements in un DataFrame
+    df = pd.read_sql_query("SELECT * FROM measurements", conn)
+
+    df["measure_timestamp_iso"] = pd.to_datetime(
+    df["measure_timestamp"], unit="s").dt.tz_localize("UTC").dt.tz_convert("Europe/Rome").dt.strftime("%Y-%m-%d %H:%M:%S")
+
+    # Chiudiamo la connessione
+    conn.close()
+    
+    # Pivot: ogni misura diventa una colonna, valori = raw_data
+    df_pivot = df.pivot_table(
+        index="measure_timestamp_iso",
+        columns="measure_name",
+        values="raw_data"
+    ).reset_index()
+
+    newDB = df_pivot.rename(columns={"measure_timestamp_iso": "timestamp", "Portata": "Portata [l/s]", "Potenza attiva turbina": "Potenza [kW]", "Pressione acqua turbina": "Pressione [bar]"})
+    newDB.to_csv("DBCAN.csv", index=False)
+    
+    return newDB
+
 
 def scaricaDati(Plant, token, Data):
 
@@ -786,6 +813,8 @@ def scaricaDati(Plant, token, Data):
         newDB = ScaricaDatiSA3()
     elif Plant == "ZG":
         newDB = ScaricaDatiZG()
+    elif Plant == "CAN":
+        newDB = ScaricaDatiCAN()
     else:
         newDB = []
 

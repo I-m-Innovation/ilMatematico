@@ -80,6 +80,22 @@ def checkCSTCharge(PlantData):
 
     return CSTNewState
 
+def checkCANProduction(PlantData):
+
+    DB = PlantData["DB"]
+    N = len(DB["timestamp"])
+
+    DatiIst = {"t": DB["timestamp"][N-1], "Q": DB["Portata [l/s]"][N-1], "P": DB["Potenza [kW]"][N-1],
+               "Pressure": DB["Pressione [bar]"][N-1]}
+
+    try:
+        CANNewState = controlla_centrale_tg(DatiIst, "CAN", PlantData["Plant state"])
+
+    except Exception as err:
+        print(err)
+        CANNewState = "U"
+
+    return CANNewState
 
 def checkSTProduction(PlantData):
 
@@ -212,6 +228,8 @@ def checkProduction(Plant, token, Data):
         NewState = checkSA3Production(Data)
     elif Plant == "ZG":
         NewState = checkZGProduction(Data)
+    elif Plant == "CAN":
+        NewState = checkCANProduction(Data)
     else:
         NewState = "U"
 

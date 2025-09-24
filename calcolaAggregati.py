@@ -33,6 +33,8 @@ def expected_eta(last_var2, plant, last_var3):
 
         eta_min = eta_aspettato - dev_aspettato
         eta_max = eta_aspettato + dev_aspettato
+    elif plant == "CAN":
+        eta_aspettato, eta_min, eta_max = 0, 0, 0
 
     else:
 
@@ -195,7 +197,7 @@ def calcola_aggregati_hydro(plant, data):
     q_par = []
     eta = []
 
-    if plant == "ST" or plant == "PAR":
+    if plant == "ST" or plant == "PAR" or plant == "CAN":
 
         t = data["timestamp"]
         t = pd.to_datetime(t, format='mixed')
